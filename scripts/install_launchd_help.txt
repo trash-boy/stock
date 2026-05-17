@@ -1,0 +1,24 @@
+launchd 已写入 plist:~/Library/LaunchAgents/com.stockbot.daily-paper.plist
+但是当前 IDE/终端进程缺少「完全磁盘访问 (Full Disk Access)」权限,
+导致 `launchctl bootstrap` 返回 Error 5 (EIO)。
+
+请用以下 3 种方式之一完成最后一步加载:
+
+【方式 1】在系统自带 Terminal.app 中执行 (最快):
+  launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.stockbot.daily-paper.plist
+  launchctl list | grep stockbot
+
+【方式 2】给当前 IDE/终端授权后再跑:
+  System Settings → Privacy & Security → Full Disk Access → 添加你的 IDE/Terminal → 重启 IDE
+  然后回到这里再跑 .venv/bin/python scripts/install_daily_launchd.py
+
+【方式 3】重启 Mac:
+  plist 已经在 ~/Library/LaunchAgents/,系统会在登录时自动注册并按 14:25 触发。
+
+验证:
+  launchctl list | grep stockbot           # 应能看到 com.stockbot.daily-paper
+  launchctl print gui/$(id -u)/com.stockbot.daily-paper
+
+立即测试一次 (不等 14:25):
+  launchctl kickstart -k gui/$(id -u)/com.stockbot.daily-paper
+  tail -f stockbot/logs/daily_launchd.out

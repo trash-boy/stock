@@ -1,0 +1,151 @@
+# QMT / miniQMT / xtquant 自动交易配置
+# 默认不允许实盘。要实盘必须同时满足 runtime.env=live 且 runtime.enabled=true。
+
+runtime:
+  env: alert        # paper | alert | live  (alert: 推飞书不真下单,Mac实盘过渡)
+  enabled: true     # 紧急熔断开关:设为 false 立刻停止所有推送/下单
+  strategy: dragon_head
+
+qmt:
+  path: ""          # miniQMT userdata_mini 路径
+  session_id: 10001
+  account_id: ""
+  account_type: STOCK
+
+universe:
+  market: A股
+  exclude_prefixes: ["ST", "*ST", "退"]
+  preferred_industries: ["人工智能", "半导体", "机器人", "创新药", "新能源", "算力", "软件", "军工电子"]
+  avoid_industries: ["银行", "地产", "煤炭", "钢铁", "传统基建", "传统公用事业"]
+
+risk:
+  max_total_position_pct: 0.50
+  max_single_position_pct: 0.10
+  max_daily_buy_amount: 30000
+  max_single_order_amount: 10000
+  max_positions: 5
+  stop_loss_pct: 0.06
+  take_profit_pct: 0.18
+  trailing_stop_pct: 0.08
+  max_daily_loss_pct: 0.02
+  min_cash_reserve_pct: 0.30
+  block_new_buy_after: "14:55:00"
+
+execution:
+  order_type: latest_price
+  price_slippage_pct: 0.003
+  lot_size: 100
+  dry_run_default: true
+
+logging:
+  trade_log: stockbot/logs/trades.csv
+  risk_log: stockbot/logs/risk.log
+  reject_log: stockbot/logs/rejections.csv
+
+
+paper:
+  initial_cash: 100000
+  state_path: stockbot/data/paper_account.json
+
+# 飞书自定义机器人推送(env=alert 时使用)
+lark:
+  webhook: ""              # 飞书群「设置」-「群机器人」-「自定义机器人」生成的 webhook URL
+  secret: ""               # 可选:开启签名校验时填(强烈建议开启)
+  mention_user: ""         # 可选:open_id,推送时@你
+
+market_data:
+  provider: akshare   # akshare | xtquant | tushare
+  retries: 5
+  retry_sleep: 1.2
+  cache:
+    enabled: true
+    root: ~/.cache/stockbot/history
+
+
+universe_filter:
+  output_path: stockbot/data/universe.csv
+  top_n: 50
+  min_price: 3.0
+  min_amount: 80000000        # 最低成交额 8000 万，过滤流动性差的票
+  max_abs_pct_change: 19.5    # 过滤极端涨跌/异常波动
+  exclude_bj: true
+  excluded_name_keywords: ["ST", "*ST", "退"]
+  excluded_code_prefixes: []
+  preferred_code_prefixes: ["300", "301", "688", "002"]
+  main_code_prefixes: ["000", "600", "601", "603", "605"]
+
+report:
+  output_dir: stockbot/reports
+
+
+leader_strategy:
+  lookback: 20
+  near_high_pct: 0.08
+  min_amount: 80000000
+  max_daily_pct_change: 12.0
+  top_n: 5
+
+backtest:
+  initial_cash: 100000
+  fee_rate: 0.0003
+  output_dir: stockbot/backtests
+
+
+market_context:
+  path: stockbot/data/market_context.json
+  # climax 高潮期直接拉黑(顶部接最后一棒风险极高);只在 repair 期减半
+  block_buy_phases: ["panic", "cooldown", "unknown", "climax"]
+  half_position_phases: ["repair"]
+  # climax 期即使被解封,也只允许绝对龙头,禁止 position_switch
+  climax_allow_roles: ["absolute_leader"]
+
+sector_heat:
+  preferred_keywords: ["人工智能", "AI", "半导体", "芯片", "机器人", "算力", "软件", "创新药", "新能源", "军工", "低空经济"]
+  top_n: 20
+
+
+dragon_head_strategy:
+  pool_path: stockbot/data/dragon_pool.csv
+  watch_list_path: stockbot/data/watch_list_tomorrow.csv  # 已封板龙头观察池(供次日 morning_call 用)
+  top_n: 3
+  min_limit_up_count: 2
+  # 成交额分档:主板/北交所流动性更好,创业板/科创板首板成交额常 5000-7000 万就封了
+  # 留向后兼容:仍保留 min_amount 作为 default,但分档优先
+  min_amount: 50000000                # 兜底默认值
+  min_amount_main: 80000000           # 主板(60x/00x)/北交所(8x/4x)
+  min_amount_growth: 50000000         # 创业板/科创(300/301/688)
+  allow_position_switch: true
+  only_sector_leader: true
+  max_open_times: 1
+  min_seal_amount: 0
+  # 弱转强买点上限:必须低于涨停阈值至少 0.7,避免临近封板时挂单买不到
+  # 主板涨停=10.0, 上限=8.5 → 至少留 1.5 缓冲;创业板/科创板 19.5,缓冲更大
+  max_chase_pct_change: 8.5
+  min_buy_pct_change: 2.0
+  near_high_pct: 0.06
+  allow_first_negative_pullback: false
+  # 启用首阴回踩(养家高频买点之一);默认仍关闭以兼容旧行为
+  # 改为 true 时 buy_point=first_negative_pullback 会出信号
+
+# 龙头式卖出 — 替代原 risk.py 通用止损/止盈,匹配龙头战法节奏
+dragon_head_exit:
+  enabled: true
+  # 情绪转 cooldown/panic 时 T+1 全清
+  cooldown_full_clear: true
+  emergency_exit_phases: ["cooldown", "panic"]
+  # 持仓票当日炸板(open_times >= 1)且 30 分钟内不回封 → 收盘前一刻卖
+  break_board_exit: true
+  break_board_min_open_times: 1
+  # 盘中放量滞涨:成交额 >= 昨日 1.5x 但涨幅 < 3% → 半仓减出
+  momentum_failure_exit: true
+  momentum_volume_ratio: 1.5
+  momentum_max_pct: 3.0
+  momentum_reduce_ratio: 0.5
+  # 题材哑火:持仓票所在板块当日无新涨停 + 龙头连板断板 → 次日开盘卖
+  theme_dead_exit: true
+
+# 集合竞价过滤(morning_call 用) — 防止次日高开追到顶
+call_auction_filter:
+  enabled: true
+  max_premium_pct: 7.0      # 高开超过 7% 跳过
+  min_premium_pct: -2.0     # 低开破位 -2% 跳过

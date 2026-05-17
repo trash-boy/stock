@@ -1,0 +1,31 @@
+{
+  "cash": 94000.0,
+  "positions": {
+    "000001.SZ": {
+      "quantity": 600,
+      "avg_price": 10.0,
+      "last_price": 10.0,
+      "high_price": 10.0
+    }
+  },
+  "orders": [
+    {
+      "symbol": "000001.SZ",
+      "side": "BUY",
+      "quantity": 300,
+      "price": 10.0,
+      "reason": "manual_paper_test",
+      "executed_at": "2026-05-16T10:24:00",
+      "amount": 3000.0
+    },
+    {
+      "symbol": "000001.SZ",
+      "side": "BUY",
+      "quantity": 300,
+      "price": 10.0,
+      "reason": "manual_paper_test",
+      "executed_at": "2026-05-16T10:24:00",
+      "amount": 3000.0
+    }
+  ]
+}

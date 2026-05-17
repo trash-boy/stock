@@ -1,0 +1,32 @@
+{
+  "run_id": "20260516_150848",
+  "project_root": "/Users/bytedance/PycharmProjects/stock",
+  "ok": true,
+  "steps": [
+    {
+      "name": "build_market_context",
+      "returncode": 0,
+      "started_at": "2026-05-16T15:08:48",
+      "finished_at": "2026-05-16T15:09:32"
+    },
+    {
+      "name": "build_dragon_pool",
+      "returncode": 0,
+      "started_at": "2026-05-16T15:09:32",
+      "finished_at": "2026-05-16T15:09:34"
+    },
+    {
+      "name": "run_trader",
+      "returncode": 0,
+      "started_at": "2026-05-16T15:09:34",
+      "finished_at": "2026-05-16T15:13:59"
+    },
+    {
+      "name": "generate_daily_report",
+      "returncode": 0,
+      "started_at": "2026-05-16T15:13:59",
+      "finished_at": "2026-05-16T15:13:59"
+    }
+  ],
+  "log_path": "/Users/bytedance/PycharmProjects/stock/stockbot/logs/daily/20260516_150848.log"
+}

@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>stockbot 龙头战法 SOP · Mac 实盘版</title>
+<style>
+  :root {
+    --primary: #1a73e8;
+    --success: #34a853;
+    --warning: #fbbc04;
+    --danger: #ea4335;
+    --bg: #fafafa;
+    --card: #ffffff;
+    --border: #e0e0e0;
+    --text: #202124;
+    --muted: #5f6368;
+    --code-bg: #f1f3f4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 15px;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  header {
+    border-bottom: 3px solid var(--primary);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--primary);
+  }
+  header .meta {
+    color: var(--muted);
+    font-size: 13px;
+  }
+  nav.toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 24px;
+    margin-bottom: 24px;
+  }
+  nav.toc h2 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  nav.toc ol {
+    margin: 0;
+    padding-left: 20px;
+    columns: 2;
+  }
+  nav.toc a {
+    color: var(--text);
+    text-decoration: none;
+  }
+  nav.toc a:hover { color: var(--primary); }
+
+  section.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 28px;
+    margin-bottom: 20px;
+  }
+  section.card h2 {
+    margin: 0 0 12px;
+    font-size: 20px;
+    color: var(--primary);
+    border-left: 4px solid var(--primary);
+    padding-left: 10px;
+  }
+  section.card h3 {
+    margin: 18px 0 8px;
+    font-size: 16px;
+    color: var(--text);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 14px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: var(--text);
+  }
+  tr:hover td { background: #fcfcfc; }
+
+  code {
+    background: var(--code-bg);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.92em;
+    color: #c7254e;
+  }
+  pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 14px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 6px;
+  }
+  .badge.auto { background: #e3f2fd; color: #1565c0; }
+  .badge.manual { background: #fff8e1; color: #c87900; }
+  .badge.danger { background: #fdecea; color: var(--danger); }
+  .badge.success { background: #e6f4ea; color: var(--success); }
+
+  .callout {
+    border-left: 4px solid;
+    padding: 10px 16px;
+    margin: 12px 0;
+    border-radius: 0 4px 4px 0;
+  }
+  .callout.info { border-color: var(--primary); background: #e8f0fe; }
+  .callout.warn { border-color: var(--warning); background: #fef7e0; }
+  .callout.danger { border-color: var(--danger); background: #fdecea; }
+  .callout.success { border-color: var(--success); background: #e6f4ea; }
+  .callout strong { display: block; margin-bottom: 4px; }
+
+  .timeline {
+    position: relative;
+    padding-left: 32px;
+    margin: 16px 0;
+  }
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline .step {
+    position: relative;
+    margin-bottom: 18px;
+  }
+  .timeline .step::before {
+    content: "";
+    position: absolute;
+    left: -28px;
+    top: 6px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 3px solid var(--card);
+    box-shadow: 0 0 0 1px var(--border);
+  }
+  .timeline .step.manual::before { background: var(--warning); }
+  .timeline .step.auto::before { background: var(--primary); }
+  .timeline .step .when {
+    font-weight: 600;
+    color: var(--primary);
+    font-size: 14px;
+  }
+  .timeline .step.manual .when { color: #c87900; }
+  .timeline .step .what { margin-top: 4px; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 768px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    nav.toc ol { columns: 1; }
+  }
+
+  .file-tree {
+    background: #fafafa;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 16px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #333;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .file-tree .comment { color: #888; }
+
+  footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #fff;
+    border: 1px solid #c0c0c0;
+    border-radius: 3px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>stockbot 龙头战法 SOP · Mac 实盘版</h1>
+  <div class="meta">
+    项目路径:<code>/Users/bytedance/PycharmProjects/stock</code> ·
+    平台:macOS only ·
+    实盘方式:飞书推送 + 手动下单 ·
+    最后更新:2026-05-17
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#overview">系统总览</a></li>
+    <li><a href="#timeline">完整时间线</a></li>
+    <li><a href="#daily-run">T-1 14:25 · daily_run</a></li>
+    <li><a href="#morning-call">T 09:20 · morning_call</a></li>
+    <li><a href="#manual-trade">T 09:20-09:25 · 手动挂单</a></li>
+    <li><a href="#confirm">T 09:30+ · 确认成交</a></li>
+    <li><a href="#position">持仓管理 / 风控</a></li>
+    <li><a href="#install">首次安装步骤</a></li>
+    <li><a href="#daily-checklist">每日 / 每周 Checklist</a></li>
+    <li><a href="#troubleshoot">应急处理</a></li>
+    <li><a href="#files">文件结构速查</a></li>
+    <li><a href="#commands">常用命令速查</a></li>
+    <li><a href="#v11">v1.1 升级清单 &amp; 已知局限</a></li>
+  </ol>
+</nav>
+
+<!-- ============ 1. 系统总览 ============ -->
+<section class="card" id="overview">
+  <h2>① 系统总览</h2>
+  <p>整套系统在 macOS launchd 上跑两个定时作业,你只需在每天开盘前 5 分钟手动挂一次单 + 开盘后确认一次成交,其余全自动。</p>
+
+  <div class="callout info">
+    <strong>设计原则</strong>
+    <ul style="margin: 4px 0;">
+      <li>已涨停封死的票 <strong>不发买单</strong>(买不到),写入观察池供次日 9:25 集合竞价用</li>
+      <li>当日可执行的弱转强/分歧转一致信号才发 BUY 意图</li>
+      <li>风控全在策略层,你执行前看一眼飞书消息即可</li>
+      <li>所有成交结果你手动确认,系统不连券商</li>
+    </ul>
+  </div>
+
+  <h3>三类角色分工</h3>
+  <table>
+    <thead>
+      <tr><th>角色</th><th>谁来做</th><th>什么时候</th><th>做什么</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge auto">自动 launchd</span></td>
+        <td>系统</td>
+        <td>T 09:20</td>
+        <td>读昨日 watch list,推飞书集合竞价候选</td>
+      </tr>
+      <tr>
+        <td><span class="badge manual">手动 你</span></td>
+        <td>你</td>
+        <td>T 09:20-09:25</td>
+        <td>在券商 App 以涨停参考价集合竞价挂买单</td>
+      </tr>
+      <tr>
+        <td><span class="badge manual">手动 你</span></td>
+        <td>你</td>
+        <td>T 09:30 后</td>
+        <td>跑 <code>confirm_manual_fill.py</code> 录入实际成交</td>
+      </tr>
+      <tr>
+        <td><span class="badge auto">自动 launchd</span></td>
+        <td>系统</td>
+        <td>T 14:25</td>
+        <td>收盘前扫描,产出明日 watch list + 推 daily report</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 2. 完整时间线 ============ -->
+<section class="card" id="timeline">
+  <h2>② 完整时间线(跨日闭环)</h2>
+  <div class="timeline">
+    <div class="step auto">
+      <div class="when">T-1 · 14:25 · launchd 自动</div>
+      <div class="what">
+        <code>com.stockbot.daily-paper.plist</code> 触发 <code>daily_run.py</code>:
+        拉 universe → 算情绪 → 拉涨停池 → 跑策略 → 出报告。
+        <strong>已封板龙头进 watch_list_tomorrow.csv;弱转强信号进 pending_orders。</strong>
+      </div>
+    </div>
+    <div class="step auto">
+      <div class="when">T · 09:20 · launchd 自动</div>
+      <div class="what">
+        <code>com.stockbot.morning-call.plist</code> 触发 <code>morning_call.py</code>:
+        读昨日 watch list,推飞书消息(含涨停参考价)。
+      </div>
+    </div>
+    <div class="step manual">
+      <div class="when">T · 09:20-09:25 · 你手动</div>
+      <div class="what">
+        看飞书 → 选 1-2 只龙头 → 打开券商 App → 以「涨停参考价」<strong>集合竞价挂买单</strong>。
+        9:25 后没成交就放弃,不追高。
+      </div>
+    </div>
+    <div class="step manual">
+      <div class="when">T · 09:30 后 · 你手动</div>
+      <div class="what">
+        <code>scripts/confirm_manual_fill.py --list</code> 看待确认。
+        成交了 <code>--confirm N --price X --quantity Y</code>;没成交 <code>--reject N</code>。
+      </div>
+    </div>
+    <div class="step auto">
+      <div class="when">T · 14:25 · launchd 自动(下一轮)</div>
+      <div class="what">
+        再次跑 daily_run。如果今天有持仓,会顺带扫止盈/止损/移动止盈,触发就推 SELL 意图给你。
+        同时产出 <strong>明日 watch list</strong>,循环。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. daily_run ============ -->
+<section class="card" id="daily-run">
+  <h2>③ T-1 14:25 · daily_run.py 详解</h2>
+  <p>调度由 <code>~/Library/LaunchAgents/com.stockbot.daily-paper.plist</code> 触发,执行下列 5 步管线,任一步失败立即推飞书告警并退出。</p>
+
+  <table>
+    <thead>
+      <tr><th>步骤</th><th>脚本</th><th>产物</th><th>失败行为</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><code>build_universe.py</code></td>
+        <td><code>stockbot/data/universe.csv</code> · 约 50 只候选</td>
+        <td>推 Lark + 退出 returncode=非0</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><code>build_market_context.py</code></td>
+        <td><code>market_context.json</code> · 情绪 phase</td>
+        <td>有 fallback,保留上次有效 context</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><code>build_dragon_pool.py</code></td>
+        <td><code>dragon_pool.csv</code> · 涨停池</td>
+        <td>空池返回 3,daily_run 熔断推 Lark</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><code>run_trader.py</code></td>
+        <td>pending_orders + watch_list_tomorrow.csv</td>
+        <td>抛异常推 Lark</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><code>generate_daily_report.py</code></td>
+        <td>markdown 报告 + 推飞书摘要</td>
+        <td>同上</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>第 4 步的关键分流逻辑</h3>
+  <table>
+    <thead>
+      <tr><th>买点</th><th>条件</th><th>走向</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>limit_up_leader</code></td>
+        <td>pct ≥ 9.5% 且收盘接近最高,已封板</td>
+        <td><strong>不发单</strong>,写 watch_list_tomorrow.csv,供次日 morning_call 用</td>
+      </tr>
+      <tr>
+        <td><code>weak_to_strong</code></td>
+        <td>5.0% ≤ pct ≤ 8.5%,强势收盘</td>
+        <td>发 BUY 意图(但 14:25 后实际很难成交,主要作为复盘记录)</td>
+      </tr>
+      <tr>
+        <td><code>divergence_to_consensus</code></td>
+        <td>开过板但收回高位</td>
+        <td>发 BUY 意图</td>
+      </tr>
+      <tr>
+        <td><code>first_negative_pullback</code></td>
+        <td>首阴回踩(默认关闭)</td>
+        <td>发 BUY 意图</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <strong>注意</strong>
+    <code>_cannot_buy_live</code> 会拒绝 <strong>pct ≥ 涨停阈值-0.3</strong> 的票(主板≥9.7、创业板≥19.2、北交所≥29.2)。
+    这意味着已经实质封死的板不会进入 executable_signals,只会进 watch list。
+  </div>
+</section>
+
+<!-- ============ 4. morning_call ============ -->
+<section class="card" id="morning-call">
+  <h2>④ T 09:20 · morning_call.py 详解</h2>
+  <p>调度由 <code>~/Library/LaunchAgents/com.stockbot.morning-call.plist</code> 触发。逻辑:</p>
+  <ol>
+    <li>检查 <code>is_trade_day(today)</code>,非交易日 SKIP</li>
+    <li>读 <code>stockbot/data/watch_list_tomorrow.csv</code></li>
+    <li>过滤 watch_date 距今 > 4 天的旧记录(防长假残留)</li>
+    <li>计算每只票的<strong>涨停参考价</strong>:<code>price × (1 + limit_up_pct)</code>
+      <ul>
+        <li>主板(60x/00x):+10%</li>
+        <li>创业板/科创板(300/301/688):+20%</li>
+        <li>北交所(8x/4x):+30%</li>
+      </ul>
+    </li>
+    <li>组装文本推飞书</li>
+  </ol>
+
+  <h3>飞书消息样例</h3>
+  <pre><code>🌅 stockbot morning_call · 2026-05-18
+昨交易日(2026-05-15)涨停龙头观察池,今日 9:25 前可考虑集合竞价挂单。
+⚠️ 排队靠前才有机会成交,挂不到不要追高!
+
+• 603779.SH 威龙股份 | 板块:非白酒 | 连板:3 | 昨收:9.92 | 涨停参考价:10.91 | role:absolute_leader
+• 603082.SH 北自科技 | 板块:自动化设 | 连板:2 | 昨收:42.3 | 涨停参考价:46.53 | role:absolute_leader
+• 002971.SZ 和远气体 | 板块:化学制品 | 连板:2 | 昨收:41.21 | 涨停参考价:45.33 | role:absolute_leader
+
+使用建议:择 1-2 只情绪/板块龙头,以涨停价集合竞价挂单。</code></pre>
+</section>
+
+<!-- ============ 5. 手动挂单 ============ -->
+<section class="card" id="manual-trade">
+  <h2>⑤ T 09:20-09:25 · 你手动挂单(关键 5 分钟)</h2>
+
+  <div class="callout danger">
+    <strong>⏰ 时间窗口非常窄</strong>
+    集合竞价 9:15 开始,9:25 结束,过点系统就转入连续竞价。
+    你必须在 <strong>9:25 前</strong> 完成挂单,且越早挂越好(集合竞价按时间优先排队)。
+  </div>
+
+  <h3>决策流程</h3>
+  <table>
+    <thead>
+      <tr><th>步骤</th><th>判断</th><th>建议</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1. 是否参与</td>
+        <td>看飞书消息 + 板块情绪 + 隔夜消息面</td>
+        <td>如果板块情绪不好(隔夜美股/相关性资产大跌),宁可不参与</td>
+      </tr>
+      <tr>
+        <td>2. 选哪只</td>
+        <td>看 role / 连板数 / 板块地位</td>
+        <td>优先 <code>role=absolute_leader</code> 且连板 ≥ 2 的</td>
+      </tr>
+      <tr>
+        <td>3. 几只</td>
+        <td>分散 vs 集中</td>
+        <td>1-2 只为宜,不超过 3 只</td>
+      </tr>
+      <tr>
+        <td>4. 单只买多少</td>
+        <td>看风控限额(config.yaml)</td>
+        <td>单笔 ≤ 1 万,单票 ≤ 总资产 10%,总仓位 ≤ 50%</td>
+      </tr>
+      <tr>
+        <td>5. 挂单价</td>
+        <td>低了排队靠后,高了多花钱</td>
+        <td><strong>直接挂涨停参考价</strong>,集合竞价不会真的高于涨停</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>券商 App 操作(同花顺 / 华泰证券 / 国君君弘 等 Mac 版或网页版)</h3>
+  <ol>
+    <li>9:15 前打开 App,登录</li>
+    <li>买入 → 输入代码(只输 6 位,例如 <code>603779</code>)</li>
+    <li>价格栏填涨停参考价(例如 <code>10.91</code>),数量栏填 100 的整数倍</li>
+    <li>下单</li>
+    <li>9:25 后查「当日委托」看是否成交</li>
+  </ol>
+
+  <div class="callout info">
+    <strong>没成交怎么办?</strong>
+    9:25 后还显示「未成交」就 <strong>立刻撤单</strong>。封板的票开盘后秒封,你的限价单会一直挂在那里浪费冻结资金。撤单后果断放弃今日该票,等下次。
+  </div>
+</section>
+
+<!-- ============ 6. 确认成交 ============ -->
+<section class="card" id="confirm">
+  <h2>⑥ T 09:30+ · 确认成交(必做!)</h2>
+  <p>系统不连券商,所以你买没买到、买了多少、成交价多少,系统不知道。必须手动告诉它,才能更新 paper_account 和 trades.csv。</p>
+
+  <pre><code>cd /Users/bytedance/PycharmProjects/stock
+
+# 1. 看待确认列表(每条前面有索引号)
+.venv/bin/python scripts/confirm_manual_fill.py --list
+
+# 2. 假设第 0 条成交了:成交价 10.89,成交数量 200 股
+.venv/bin/python scripts/confirm_manual_fill.py --confirm 0 --price 10.89 --quantity 200
+
+# 3. 没成交的:从 pending 里移除(否则下次会被判为重复 BUY 拒绝新信号)
+.venv/bin/python scripts/confirm_manual_fill.py --reject 0</code></pre>
+
+  <div class="callout warn">
+    <strong>不确认会怎样?</strong>
+    <ul style="margin: 4px 0;">
+      <li>T+1 系统自动把状态改 expired,但 cash/positions 不会更新</li>
+      <li>策略会以为你没买,如果次日仍出同票信号会 <strong>拒绝重复 BUY</strong>(去重保护)</li>
+      <li>持仓监控扫不到这只票,止盈/止损不会触发</li>
+    </ul>
+  </div>
+
+  <h3>已持仓的 SELL 信号同理</h3>
+  <p>14:25 daily_run 如果触发了 SELL(止盈/止损/移动止盈),会推飞书。你执行卖出后:</p>
+  <pre><code>.venv/bin/python scripts/confirm_manual_fill.py --confirm N --price X --quantity Y
+# 注意 SELL 也是 confirm,系统从 side 字段自动判断方向</code></pre>
+</section>
+
+<!-- ============ 7. 持仓管理 ============ -->
+<section class="card" id="position">
+  <h2>⑦ 持仓管理 / 风控规则</h2>
+  <p>每次 <code>run_trader.py</code> 跑时,会调 <code>RiskManager.stop_orders(account)</code> 扫已持仓的票。</p>
+
+  <table>
+    <thead>
+      <tr><th>触发条件</th><th>config.yaml 字段</th><th>默认值</th><th>动作</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>浮亏止损</td><td><code>risk.stop_loss_pct</code></td><td>6%</td><td>推 SELL 全部</td></tr>
+      <tr><td>浮盈止盈</td><td><code>risk.take_profit_pct</code></td><td>18%</td><td>推 SELL 全部</td></tr>
+      <tr><td>从最高点回撤</td><td><code>risk.trailing_stop_pct</code></td><td>8%</td><td>推 SELL 全部</td></tr>
+      <tr><td>当日总亏损熔断</td><td><code>risk.max_daily_loss_pct</code></td><td>2%</td><td>当日所有 BUY 全部拒绝</td></tr>
+      <tr><td>盘尾禁买</td><td><code>risk.block_new_buy_after</code></td><td>14:55:00</td><td>该时间后 BUY 全拒</td></tr>
+      <tr><td>单笔金额上限</td><td><code>risk.max_single_order_amount</code></td><td>10000</td><td>超额拒绝</td></tr>
+      <tr><td>单日买入上限</td><td><code>risk.max_daily_buy_amount</code></td><td>30000</td><td>超额拒绝</td></tr>
+      <tr><td>单票仓位上限</td><td><code>risk.max_single_position_pct</code></td><td>10%</td><td>超额拒绝</td></tr>
+      <tr><td>总仓位上限</td><td><code>risk.max_total_position_pct</code></td><td>50%</td><td>超额拒绝</td></tr>
+      <tr><td>最低现金保留</td><td><code>risk.min_cash_reserve_pct</code></td><td>30%</td><td>低于则拒新 BUY</td></tr>
+      <tr><td>最大持仓数</td><td><code>risk.max_positions</code></td><td>5</td><td>超出且非加仓则拒</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 8. 首次安装 ============ -->
+<section class="card" id="install">
+  <h2>⑧ 首次安装步骤(Mac 一次性)</h2>
+
+  <h3>步骤 1 · 准备 Python 虚拟环境(已有可跳过)</h3>
+  <pre><code>cd /Users/bytedance/PycharmProjects/stock
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt</code></pre>
+
+  <h3>步骤 2 · 配置飞书自定义机器人</h3>
+  <ol>
+    <li>Mac 飞书 App → 进入接收推送的群(建议建一个「stockbot 私群」只拉自己)</li>
+    <li>群设置 → 群机器人 → 添加机器人 → 自定义机器人</li>
+    <li>名字随便,复制 webhook URL</li>
+    <li>(可选)勾选「签名校验」,复制 secret</li>
+    <li>编辑 <code>config.yaml</code>:
+<pre><code>lark:
+  webhook: "https://open.larksuite.com/open-apis/bot/v2/hook/xxxx"
+  secret: ""              # 开签名校验时填,否则留空
+  mention_user: ""        # 可选:你的 open_id,推送时 @你</code></pre>
+    </li>
+  </ol>
+
+  <h3>步骤 3 · 写入 launchd plist 文件</h3>
+  <pre><code>cd /Users/bytedance/PycharmProjects/stock
+.venv/bin/python scripts/install_daily_launchd.py</code></pre>
+  <p>会在 <code>~/Library/LaunchAgents/</code> 写入两个文件:</p>
+  <ul>
+    <li><code>com.stockbot.daily-paper.plist</code> · 14:25 触发</li>
+    <li><code>com.stockbot.morning-call.plist</code> · 09:20 触发</li>
+  </ul>
+
+  <h3>步骤 4 · 在系统 Terminal.app 加载 launchd</h3>
+  <div class="callout danger">
+    <strong>必须用系统自带 Terminal.app</strong>
+    路径:<kbd>访达</kbd> → <kbd>应用程序</kbd> → <kbd>实用工具</kbd> → <kbd>终端.app</kbd>(或英文 Terminal.app)<br>
+    <strong>不能用</strong> IDE 内置终端 / iTerm / Cursor 终端,因为 macOS 14+ 要求发起 launchctl bootstrap 的进程必须有「完全磁盘访问」权限。
+  </div>
+  <pre><code>launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.stockbot.morning-call.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.stockbot.daily-paper.plist
+launchctl list | grep stockbot   # 应输出两条</code></pre>
+
+  <h3>步骤 5 · 验证(立即试跑一次,不等真实时间)</h3>
+  <pre><code># 跑一次 daily_run(忽略非交易日检查)
+.venv/bin/python scripts/daily_run.py --force --skip-universe
+
+# 跑一次 morning_call(忽略非交易日检查)
+.venv/bin/python scripts/morning_call.py --force
+
+# 立即触发 launchd job(不等到 14:25)
+launchctl kickstart -k gui/$(id -u)/com.stockbot.daily-paper
+tail -f stockbot/logs/com.stockbot.daily-paper.out</code></pre>
+
+  <h3>步骤 6 · 替代方案(launchd 加载失败时)</h3>
+  <p>如果系统 Terminal.app 也无法 bootstrap(macOS 15+ 部分版本),可以:</p>
+  <ul>
+    <li><strong>方案 A:</strong> 给 IDE 开 <code>系统设置 → 隐私与安全 → 完全磁盘访问</code>,重启 IDE 后再跑安装脚本</li>
+    <li><strong>方案 B:</strong> 直接重启 Mac。plist 已落到 LaunchAgents 目录,登录时系统自动注册</li>
+  </ul>
+</section>
+
+<!-- ============ 9. 每日 / 每周 Checklist ============ -->
+<section class="card" id="daily-checklist">
+  <h2>⑨ 每日 / 每周 Checklist</h2>
+
+  <div class="grid-2">
+    <div>
+      <h3>每个交易日</h3>
+      <table>
+        <thead><tr><th>时刻</th><th>动作</th></tr></thead>
+        <tbody>
+          <tr><td>09:20</td><td>看飞书 morning_call 推送</td></tr>
+          <tr><td>09:20-09:25</td><td>选 1-2 只 → 券商 App 集合竞价挂单</td></tr>
+          <tr><td>09:25-09:30</td><td>未成交立即撤单</td></tr>
+          <tr><td>09:30+</td><td><code>confirm_manual_fill.py</code> 录入成交</td></tr>
+          <tr><td>14:25</td><td>看飞书 daily report;有 SELL 意图就当晚或次日开盘卖</td></tr>
+          <tr><td>盘后</td><td>(SELL 执行后)<code>confirm_manual_fill.py</code> 录入卖出</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3>每周(建议周末)</h3>
+      <table>
+        <thead><tr><th>项</th><th>命令</th></tr></thead>
+        <tbody>
+          <tr><td>查 trades.csv 异常</td><td><code>cat stockbot/logs/trades.csv</code></td></tr>
+          <tr><td>看本周 daily 失败记录</td><td><code>grep FAILED stockbot/logs/daily/*.log</code></td></tr>
+          <tr><td>刷新交易日历缓存</td><td><code>.venv/bin/python -c "from stockbot.utils.calendar import _refresh_cache; _refresh_cache()"</code></td></tr>
+          <tr><td>核对 paper_account</td><td><code>cat stockbot/data/paper_account.json</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10. 应急处理 ============ -->
+<section class="card" id="troubleshoot">
+  <h2>⑩ 应急处理</h2>
+
+  <table>
+    <thead>
+      <tr><th>场景</th><th>诊断</th><th>处理</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>紧急停掉所有推送</td>
+        <td>—</td>
+        <td>编辑 <code>config.yaml</code> 设 <code>runtime.enabled: false</code>(无需重启 launchd)</td>
+      </tr>
+      <tr>
+        <td>launchd 没跑</td>
+        <td><code>launchctl list | grep stockbot</code> 无输出</td>
+        <td>重新跑 install + 系统 Terminal.app 里 bootstrap</td>
+      </tr>
+      <tr>
+        <td>飞书没收到推送</td>
+        <td><code>tail stockbot/logs/com.stockbot.daily-paper.err</code></td>
+        <td>检查 <code>config.yaml</code> webhook 是否填错;签名是否启用但 secret 没填</td>
+      </tr>
+      <tr>
+        <td>paper_account.json 损坏</td>
+        <td>JSON parse 报错</td>
+        <td>恢复 <code>paper_account.json.bak.YYYYMMDD</code>;或 reset 为 <code>{cash:100000, positions:{}, orders:[], pending_orders:[]}</code></td>
+      </tr>
+      <tr>
+        <td>AkShare 接口超时</td>
+        <td>build_market_context.py stdout 有 timeout warning</td>
+        <td>fallback 已自动启用,会保留上次有效 context;长期失败考虑切 tushare</td>
+      </tr>
+      <tr>
+        <td>休市/长假</td>
+        <td>—</td>
+        <td><code>is_trade_day</code> 自动 SKIP;长假后第一天 morning_call 会推「watch list 已过期」</td>
+      </tr>
+      <tr>
+        <td>同票重复 BUY 推送</td>
+        <td>飞书收到两条同股 BUY</td>
+        <td>已加去重保护;若仍出现,检查 <code>paper_account.json</code> 的 <code>pending_orders</code> 是否堆积</td>
+      </tr>
+      <tr>
+        <td>临时禁用 morning_call</td>
+        <td>—</td>
+        <td><code>launchctl bootout gui/$(id -u)/com.stockbot.morning-call</code></td>
+      </tr>
+      <tr>
+        <td>临时禁用 daily_run</td>
+        <td>—</td>
+        <td><code>launchctl bootout gui/$(id -u)/com.stockbot.daily-paper</code></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 11. 文件结构 ============ -->
+<section class="card" id="files">
+  <h2>⑪ 文件结构速查</h2>
+  <div class="file-tree">/Users/bytedance/PycharmProjects/stock/
+├── config.yaml                              <span class="comment"># 唯一配置入口</span>
+├── docs/
+│   └── SOP.html                             <span class="comment"># 本文档</span>
+├── scripts/
+│   ├── daily_run.py                         <span class="comment"># 14:25 主入口</span>
+│   ├── morning_call.py                      <span class="comment"># 09:20 主入口</span>
+│   ├── build_universe.py                    <span class="comment"># 拉候选池</span>
+│   ├── build_market_context.py              <span class="comment"># 算情绪 phase</span>
+│   ├── build_dragon_pool.py                 <span class="comment"># 拉涨停池</span>
+│   ├── run_trader.py                        <span class="comment"># 跑策略 + 推 BUY/SELL 意图</span>
+│   ├── generate_daily_report.py             <span class="comment"># 出 markdown 报告 + 推飞书</span>
+│   ├── confirm_manual_fill.py               <span class="comment"># 你手动确认成交</span>
+│   ├── install_daily_launchd.py             <span class="comment"># 安装两个 launchd plist</span>
+│   └── install_launchd_help.txt             <span class="comment"># launchd 加载帮助</span>
+├── stockbot/
+│   ├── core/
+│   │   ├── config.py                        <span class="comment"># yaml 加载</span>
+│   │   ├── risk.py                          <span class="comment"># 风控</span>
+│   │   ├── market_context.py                <span class="comment"># 情绪周期</span>
+│   │   ├── models.py                        <span class="comment"># Signal/OrderIntent/Position</span>
+│   │   └── report.py                        <span class="comment"># 报告生成</span>
+│   ├── strategies/
+│   │   └── dragon_head.py                   <span class="comment"># 龙头战法主策略</span>
+│   ├── adapters/
+│   │   ├── paper.py                         <span class="comment"># PaperBroker(本地撮合)</span>
+│   │   ├── lark_alert.py                    <span class="comment"># LarkAlertBroker(推飞书)</span>
+│   │   └── qmt.py                           <span class="comment"># QMT(Windows-only,Mac 不用)</span>
+│   ├── utils/
+│   │   └── calendar.py                      <span class="comment"># 交易日历</span>
+│   └── data/                                <span class="comment"># 持久状态(谨慎修改)</span>
+│       ├── universe.csv
+│       ├── dragon_pool.csv
+│       ├── market_context.json
+│       ├── watch_list_tomorrow.csv          <span class="comment"># 关键!次日观察池</span>
+│       ├── trade_calendar.csv
+│       └── paper_account.json
+└── stockbot/logs/
+    ├── trades.csv                           <span class="comment"># 真实成交流水</span>
+    ├── rejections.csv                       <span class="comment"># 被风控拒的单</span>
+    ├── daily/{run_id}.{log,json}            <span class="comment"># 每日完整日志</span>
+    └── com.stockbot.*.{out,err}             <span class="comment"># launchd stdout/stderr</span>
+
+~/Library/LaunchAgents/
+├── com.stockbot.daily-paper.plist
+└── com.stockbot.morning-call.plist
+</div>
+</section>
+
+<!-- ============ 12. 常用命令 ============ -->
+<section class="card" id="commands">
+  <h2>⑫ 常用命令速查</h2>
+
+  <h3>立即手动跑(测试用)</h3>
+  <pre><code># 跑 daily_run(忽略非交易日)
+.venv/bin/python scripts/daily_run.py --force --skip-universe
+
+# 跑 morning_call(忽略非交易日)
+.venv/bin/python scripts/morning_call.py --force
+
+# 单步跑某一阶段
+.venv/bin/python scripts/build_dragon_pool.py --config config.yaml --top 20 --allow-fallback
+.venv/bin/python scripts/run_trader.py --config config.yaml --top 10
+.venv/bin/python scripts/generate_daily_report.py --config config.yaml</code></pre>
+
+  <h3>launchd 管理</h3>
+  <pre><code># 查看注册状态
+launchctl list | grep stockbot
+
+# 立即触发(不等真实时间)
+launchctl kickstart -k gui/$(id -u)/com.stockbot.daily-paper
+launchctl kickstart -k gui/$(id -u)/com.stockbot.morning-call
+
+# 卸载
+launchctl bootout gui/$(id -u)/com.stockbot.daily-paper
+launchctl bootout gui/$(id -u)/com.stockbot.morning-call
+
+# 重新加载(改了 plist 后)
+.venv/bin/python scripts/install_daily_launchd.py</code></pre>
+
+  <h3>账户 / 订单管理</h3>
+  <pre><code># 看待确认订单
+.venv/bin/python scripts/confirm_manual_fill.py --list
+
+# 确认成交
+.venv/bin/python scripts/confirm_manual_fill.py --confirm 0 --price 10.89 --quantity 200
+
+# 拒绝(从 pending 移除)
+.venv/bin/python scripts/confirm_manual_fill.py --reject 0
+
+# 查当前账户状态
+cat stockbot/data/paper_account.json | python3 -m json.tool
+
+# 查今日成交
+tail -20 stockbot/logs/trades.csv</code></pre>
+
+  <h3>实时日志</h3>
+  <pre><code># launchd 输出
+tail -f stockbot/logs/com.stockbot.daily-paper.out
+tail -f stockbot/logs/com.stockbot.morning-call.out
+
+# 最新一次 daily_run 的完整日志
+ls -t stockbot/logs/daily/*.log | head -1 | xargs tail -50</code></pre>
+</section>
+
+<!-- ============ 13. v1.1 升级清单 ============ -->
+<section id="v11">
+  <h2>⑬ v1.1 升级清单 &amp; 已知局限</h2>
+  <p class="callout success">v1.1 在 v1.0 基础上修复了 6 个严重问题。下面列出新增能力与仍存在的局限,作为后续迭代依据。</p>
+
+  <h3>本次(v1.1)修复内容</h3>
+  <table>
+    <thead>
+      <tr><th>#</th><th>问题</th><th>v1.0 行为</th><th>v1.1 修复</th><th>影响文件</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>min_amount 一刀切漏首板</td>
+        <td>所有票统一 80M 门槛,创业板/科创板首板封单 5000-7000 万常被错杀</td>
+        <td>分档:主板/北交所 80M、创业板/科创 50M。新增 <code>_min_amount_for(symbol)</code></td>
+        <td><code>config.yaml</code>、<code>dragon_head.py</code></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>climax 期角色不限</td>
+        <td>climax 减半但 position_switch 仍可买,容易接最后一棒</td>
+        <td>climax 直接拉黑;若解封,只允许 absolute_leader</td>
+        <td><code>config.yaml</code>、<code>dragon_head.py</code></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>缺龙头式卖出</td>
+        <td>只有通用 6%/18%/8% 止损止盈,跟龙头节奏不合</td>
+        <td>新增 <code>DragonHeadExitStrategy</code>:emergency / 炸板 / 题材哑火 / 动量失败 4 卖点</td>
+        <td>新文件 <code>stockbot/strategies/dragon_head_exit.py</code>、<code>engine.py</code></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>watch_list 次日竞价无过滤</td>
+        <td>不管次日多高开都直接推送,容易追到 +9% 顶</td>
+        <td>morning_call 接 akshare 实时 pre-open,>+7% 或 <-2% 自动跳过并标注</td>
+        <td><code>scripts/morning_call.py</code></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>candidate pool 数据单源</td>
+        <td>只有当日 zt 池,不知道接力盘强弱</td>
+        <td>新增"昨日涨停今日表现"晋级率,板块维度算 promotion_rate 并喂入评分</td>
+        <td><code>scripts/build_dragon_pool.py</code>、<code>dragon_head.py</code></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>板块 1 票时 first_limit_rank=1.0</td>
+        <td>单票板块 first_limit_score 永远是 0,被多票热门板块二板压下去</td>
+        <td>板块只 1 票时手动给 0(代表最早封板)</td>
+        <td><code>dragon_head.py</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>新增 4 类龙头式卖出</h3>
+  <table>
+    <thead><tr><th>卖点</th><th>触发条件</th><th>动作</th><th>优先级</th></tr></thead>
+    <tbody>
+      <tr><td><strong>emergency_exit</strong></td><td>market_context.phase ∈ {cooldown, panic}</td><td>全仓 T+1 清仓</td><td>1(最高)</td></tr>
+      <tr><td><strong>break_board</strong></td><td>持仓票 open_times ≥ 1 且当前未在板上(临近涨停 0.5 内)</td><td>全卖</td><td>2</td></tr>
+      <tr><td><strong>theme_dead</strong></td><td>持仓票所在板块当日无新涨停 + 自身已断板</td><td>全卖</td><td>3</td></tr>
+      <tr><td><strong>momentum_failure</strong></td><td>今日成交额 ≥ 5日均量×1.5 但 pct_change &lt; 3%(放量滞涨)</td><td>减半</td><td>4</td></tr>
+    </tbody>
+  </table>
+
+  <p class="callout info">这 4 类卖点写在 <code>config.yaml</code> 的 <code>dragon_head_exit</code> 段,可单独开关或调阈值。整段 enabled=false 时回退到 v1.0 通用 risk.stop_orders。</p>
+
+  <h3>评分公式更新对照</h3>
+  <pre><code>v1.0:
+  score = ladder*0.28 + sector_rank*0.22 + seal*0.18 + first_limit*0.10
+        + sector_heat*0.10 + buy_point_bonus + role_bonus - open_penalty*0.12
+
+v1.1(权重微调 + 新增 promo_bonus):
+  score = ladder*0.26 + sector_rank*0.20 + seal*0.16 + first_limit*0.10
+        + sector_heat*0.10 + buy_point_bonus + role_bonus
+        + promo_bonus              # 新:板块晋级率 ≥0.5 加 0.06,≥0.3 加 0.03
+        - open_penalty*0.12</code></pre>
+
+  <h3>v1.1 仍存在的已知局限(留作 v1.2 迭代)</h3>
+  <table>
+    <thead><tr><th>局限</th><th>当前实现</th><th>真实战法做法</th><th>建议优先级</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>情绪 phase 单字段</td>
+        <td>panic / repair / ferment / climax / cooldown / unknown</td>
+        <td>多维向量:涨停家数 + 炸板率 + 连板高度 + 昨涨停今表现</td>
+        <td>P1</td>
+      </tr>
+      <tr>
+        <td>主线连续性窗口=0</td>
+        <td>每日独立判断板块热度,不看历史 N 日</td>
+        <td>"该题材连续 3+ 日领涨且未哑火"才认主线</td>
+        <td>P2</td>
+      </tr>
+      <tr>
+        <td>14:25 不是最优扫描点</td>
+        <td>距收盘 35min,有炸板风险</td>
+        <td>9:25 + 13:00 + 14:50 三段扫描比对</td>
+        <td>P2</td>
+      </tr>
+      <tr>
+        <td>关键词白名单写死</td>
+        <td><code>sector_heat.preferred_keywords</code> 静态列表</td>
+        <td>动态:近 5 日热度自动滚入/滚出</td>
+        <td>P3</td>
+      </tr>
+      <tr>
+        <td>无回测验证 v1.1 卖点</td>
+        <td>仅 smoke test,未跑历史回测</td>
+        <td>用 stockbot/backtests 框架对最近 30 个交易日跑一遍</td>
+        <td>P0(实盘前必做)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>v1.1 配置示例(config.yaml 增量)</h3>
+  <pre><code>dragon_head_strategy:
+  min_amount_main: 80000000        # 主板/北交所
+  min_amount_growth: 50000000      # 创业板/科创
+
+market_context:
+  block_buy_phases: ["panic", "cooldown", "unknown", "climax"]   # climax 加入拉黑
+  half_position_phases: ["repair"]                                # climax 移除
+  climax_allow_roles: ["absolute_leader"]
+
+dragon_head_exit:
+  enabled: true
+  cooldown_full_clear: true
+  emergency_exit_phases: ["cooldown", "panic"]
+  break_board_exit: true
+  break_board_min_open_times: 1
+  momentum_failure_exit: true
+  momentum_volume_ratio: 1.5
+  momentum_max_pct: 3.0
+  momentum_reduce_ratio: 0.5
+  theme_dead_exit: true
+
+call_auction_filter:
+  enabled: true
+  max_premium_pct: 7.0
+  min_premium_pct: -2.0</code></pre>
+
+  <h3>验证清单</h3>
+  <p>v1.1 已通过两层验证:</p>
+  <ol>
+    <li><code>scripts/smoke_test_v11.py</code> &mdash; 10 项断言覆盖配置加载、参数路由、模块导入(全过)</li>
+    <li><code>scripts/exit_strategy_unit_test.py</code> &mdash; 5 个场景测试 4 种卖点 + 1 个 negative 用例,全部正确触发:
+      <ul>
+        <li>✓ <code>emergency_exit</code> @ cooldown phase &rarr; 全清</li>
+        <li>✓ <code>break_board</code> @ open_times=2 + pct=5% &rarr; 全清</li>
+        <li>✓ <code>theme_dead</code> @ 板块无新涨停 + 自身回落 &rarr; 全清</li>
+        <li>✓ <code>momentum_failure</code> @ 量比 2.5 + pct=1% &rarr; 减半</li>
+        <li>✓ ferment phase + 板上 &rarr; 不卖(防止误伤)</li>
+      </ul>
+    </li>
+  </ol>
+  <pre><code>.venv/bin/python scripts/smoke_test_v11.py
+.venv/bin/python scripts/exit_strategy_unit_test.py</code></pre>
+
+  <h3>历史数据回测</h3>
+  <p>提供 <code>scripts/backtest_v11.py</code> 做 v1.0 / v1.1 A/B 对比(基于 AkShare 真实历史):</p>
+  <pre><code># 默认 30 只票 × 120 天历史
+.venv/bin/python scripts/backtest_v11.py --top 30 --count 120
+
+# 输出:
+#   stockbot/backtests/v11_compare/v10/{equity,trades,metrics}.csv
+#   stockbot/backtests/v11_compare/v11/{equity,trades,metrics}.csv
+#   stockbot/backtests/v11_compare/compare.md   &lt;&mdash; 一份 markdown 对照</code></pre>
+  <p class="callout warn"><strong>注意:</strong>AkShare 在弱网环境下偶发 RemoteDisconnected,
+  首跑可能丢若干样本(已自动 5 次重试 + 本地缓存到 <code>~/.cache/stockbot/history/</code>)。
+  二次执行会命中缓存,可在网络稳定时一次性把 universe 补齐再跑回测。</p>
+
+  <p class="callout warn"><strong>实盘前必做:</strong>真实数据回测确认
+  <code>emergency_exit</code> / <code>theme_dead</code> 不会在 ferment 期误触发,
+  否则会把强势票提前卖飞。</p>
+</section>
+
+<footer>
+  本 SOP 适用于 macOS 14+ · 配 AkShare + 飞书 webhook · 不连券商 API · 信号自动 / 下单手动<br>
+  项目根目录:<code>/Users/bytedance/PycharmProjects/stock</code> · 文档路径:<code>docs/SOP.html</code>
+</footer>
+
+</div>
+</body>
+</html>

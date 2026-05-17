@@ -1,0 +1,500 @@
+"""龙头战法策略：题材/情绪/梯队/板块地位/买点五层过滤。
+
+这版修正为真正围绕“龙头”而不是普通趋势：
+- 使用涨停池里的封单金额、炸板/开板次数、首次封板时间、连板数。
+- 先按板块/题材分组，只取同板块最强，避免后排套利票。
+- 支持“绝对龙头”和“卡位龙头”判定。
+- 买点只接受弱转强/分歧转一致/可选首阴低吸，不做均线趋势买入。
+"""
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from pathlib import Path
+
+import pandas as pd
+
+from stockbot.core.models import Signal, Side
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _project_path(path_text: str | Path) -> Path:
+    path = Path(path_text)
+    return path if path.is_absolute() else PROJECT_ROOT / path
+
+
+@dataclass(frozen=True)
+class DragonHeadConfig:
+    pool_path: str = "stockbot/data/dragon_pool.csv"
+    top_n: int = 3
+    min_limit_up_count: int = 1
+    min_amount: float = 100_000_000          # 兜底默认值,推荐用分档
+    min_amount_main: float = 80_000_000      # 主板(60x/00x)/北交所(8x/4x)
+    min_amount_growth: float = 50_000_000    # 创业板/科创(300/301/688)
+    min_seal_amount: float = 0
+    max_open_times: int = 3
+    max_chase_pct_change: float = 9.3
+    min_buy_pct_change: float = 2.0
+    near_high_pct: float = 0.06
+    only_sector_leader: bool = True
+    allow_position_switch: bool = True
+    allow_first_negative_pullback: bool = False
+
+
+class DragonHeadStrategy:
+    """龙头战法自动化近似。
+
+    真实龙头战法的核心不是“个股涨得好”，而是：
+    情绪允许 + 主线题材 + 梯队高度 + 同板块唯一性 + 资金承接 + 正确买点。
+    """
+
+    def __init__(self, cfg: dict):
+        self.cfg = cfg
+        raw = cfg.get("dragon_head_strategy", {})
+        default_amount = float(raw.get("min_amount", 100_000_000))
+        self.params = DragonHeadConfig(
+            pool_path=raw.get("pool_path", "stockbot/data/dragon_pool.csv"),
+            top_n=int(raw.get("top_n", 3)),
+            min_limit_up_count=int(raw.get("min_limit_up_count", 1)),
+            min_amount=default_amount,
+            min_amount_main=float(raw.get("min_amount_main", default_amount)),
+            min_amount_growth=float(raw.get("min_amount_growth", default_amount)),
+            min_seal_amount=float(raw.get("min_seal_amount", 0)),
+            max_open_times=int(raw.get("max_open_times", 3)),
+            max_chase_pct_change=float(raw.get("max_chase_pct_change", 9.3)),
+            min_buy_pct_change=float(raw.get("min_buy_pct_change", 2.0)),
+            near_high_pct=float(raw.get("near_high_pct", 0.06)),
+            only_sector_leader=bool(raw.get("only_sector_leader", True)),
+            allow_position_switch=bool(raw.get("allow_position_switch", True)),
+            allow_first_negative_pullback=bool(raw.get("allow_first_negative_pullback", False)),
+        )
+        self.market_context = self._load_json(cfg.get("market_context", {}).get("path", "stockbot/data/market_context.json"))
+        self.base_dragon_pool = self._load_pool(self.params.pool_path)
+        self.dragon_pool = self._with_sector_rank(self.base_dragon_pool)
+        # 板块晋级率(昨日涨停今日继续涨停)— 0~1
+        self.promotion_stats = self._load_json("stockbot/data/promotion_stats.json")
+
+
+    def set_runtime_pool(self, pool: pd.DataFrame) -> None:
+        """Inject a point-in-time pool, used by backtests to avoid future data."""
+        self.dragon_pool = self._with_sector_rank(pool)
+
+    def set_trade_date(self, trade_date: object) -> None:
+        """Use only the pool rows for trade_date when the pool file has a date column."""
+        if self.base_dragon_pool.empty or "date" not in self.base_dragon_pool.columns:
+            return
+        dates = pd.to_datetime(self.base_dragon_pool["date"], errors="coerce").dt.date
+        target = pd.to_datetime(trade_date).date()
+        self.dragon_pool = self._with_sector_rank(self.base_dragon_pool[dates == target].copy())
+
+    # 仅以下买点视为"今日可执行" — 必须仍能在交易时段成交
+    EXECUTABLE_BUY_POINTS = {"weak_to_strong", "divergence_to_consensus", "first_negative_pullback"}
+    # 仅观察 — 已涨停封死,不可买,只写入明日观察池
+    WATCH_BUY_POINTS = {"limit_up_leader"}
+
+    def generate(self, bars_by_symbol: dict[str, object]) -> list[Signal]:
+        """返回今日可执行 BUY 信号。同时把已封板龙头写入 watch_list_tomorrow.csv。"""
+        phase = self._emotion_phase()
+        block_phases = set(self.cfg.get("market_context", {}).get("block_buy_phases", ["panic", "cooldown", "unknown"]))
+        if phase in block_phases:
+            self._write_watch_list([])  # 清空昨日残留
+            return []
+        phase_multiplier = 0.5 if phase in set(self.cfg.get("market_context", {}).get("half_position_phases", ["repair"])) else 1.0
+        # climax 即使被解封,也只允许指定角色(默认 absolute_leader 唯一)
+        climax_allow_roles = set(self.cfg.get("market_context", {}).get("climax_allow_roles", ["absolute_leader"]))
+
+        self._ensure_pool_from_bars(bars_by_symbol)
+        ranked: list[dict] = []
+        for symbol, df in bars_by_symbol.items():
+            item = self.score_one(symbol, df)
+            if item:
+                ranked.append(item)
+        ranked.sort(key=lambda x: x["score"], reverse=True)
+
+        signals: list[Signal] = []
+        watch_items: list[dict] = []
+        used_sectors_exec: set[str] = set()
+        used_sectors_watch: set[str] = set()
+        for item in ranked:
+            sector = str(item.get("sector", ""))
+            bp = item["buy_point"]
+            role = str(item.get("role", ""))
+            # climax 期角色限制
+            if phase == "climax" and role not in climax_allow_roles:
+                continue
+            if bp in self.EXECUTABLE_BUY_POINTS:
+                if sector and sector in used_sectors_exec:
+                    continue
+                if sector:
+                    used_sectors_exec.add(sector)
+                signals.append(
+                    Signal(
+                        symbol=item["symbol"],
+                        side=Side.BUY,
+                        weight=min(max(float(item["weight"]) * phase_multiplier, 0.1), 1.0),
+                        reason=(
+                            f"dragon:{item['role']}/{bp};score:{item['score']:.4f};"
+                            f"sector_rank:{item['sector_rank']};limit:{item['limit_up_count']};"
+                            f"seal:{int(item['seal_amount'])};open:{item['open_times']};emotion:{phase}"
+                        ),
+                        price=float(item["price"]),
+                    )
+                )
+            elif bp in self.WATCH_BUY_POINTS:
+                if sector and sector in used_sectors_watch:
+                    continue
+                if sector:
+                    used_sectors_watch.add(sector)
+                watch_items.append(item)
+            if len(signals) >= self.params.top_n:
+                break
+        # 限制 watch 数量
+        watch_items = watch_items[: self.params.top_n]
+        self._write_watch_list(watch_items, phase=phase)
+        return signals
+
+    def _write_watch_list(self, items: list[dict], phase: str = "") -> None:
+        """把今日已封板龙头写入 stockbot/data/watch_list_tomorrow.csv,供次日 morning_call 用。"""
+        from datetime import date as _date
+        out_path = Path(self.cfg.get("dragon_head_strategy", {}).get(
+            "watch_list_path", "stockbot/data/watch_list_tomorrow.csv"
+        ))
+        if not out_path.is_absolute():
+            # 项目根目录(strategies 上溯 2 层)
+            root = Path(__file__).resolve().parents[2]
+            out_path = root / out_path
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        cols = ["watch_date", "symbol", "name", "sector", "role", "sector_rank",
+                "limit_up_count", "seal_amount", "open_times", "buy_point",
+                "price", "score", "phase"]
+        rows = []
+        today = _date.today().isoformat()
+        for it in items:
+            rows.append({
+                "watch_date": today,
+                "symbol": it.get("symbol", ""),
+                "name": it.get("name", ""),
+                "sector": it.get("sector", ""),
+                "role": it.get("role", ""),
+                "sector_rank": it.get("sector_rank", ""),
+                "limit_up_count": it.get("limit_up_count", ""),
+                "seal_amount": int(it.get("seal_amount", 0) or 0),
+                "open_times": it.get("open_times", 0),
+                "buy_point": it.get("buy_point", ""),
+                "price": it.get("price", 0),
+                "score": round(float(it.get("score", 0) or 0), 4),
+                "phase": phase,
+            })
+        import csv as _csv
+        with out_path.open("w", newline="", encoding="utf-8") as f:
+            w = _csv.DictWriter(f, fieldnames=cols)
+            w.writeheader()
+            w.writerows(rows)
+
+
+    def _ensure_pool_from_bars(self, bars_by_symbol: dict[str, object]) -> None:
+        """Last-resort production guard: derive a candidate pool from loaded bars.
+
+        build_dragon_pool.py is still the primary source. This guard prevents an
+        absent/empty CSV from making _pool_row return None for every symbol.
+        """
+        if not self.dragon_pool.empty:
+            return
+        rows: list[dict] = []
+        for symbol, df in bars_by_symbol.items():
+            if df is None or len(df) == 0:
+                continue
+            latest = df.iloc[-1]
+            pct = float(latest.get("pct_change", 0) or 0)
+            if pct < 5.0:
+                continue
+            amount = float(latest.get("amount", 0) or 0)
+            close = float(latest.get("close", latest.get("price", 0)) or 0)
+            rows.append({
+                "symbol": symbol,
+                "name": str(latest.get("name", "")),
+                "sector": str(latest.get("sector", latest.get("industry", "")) or "未分组"),
+                "limit_up_count": 1,
+                "score": min(max(pct, 0), 20) / 20,
+                "price": close,
+                "pct_change": pct,
+                "amount": amount,
+                "seal_amount": float(latest.get("seal_amount", 0) or 0),
+                "turnover": float(latest.get("turnover", 0) or 0),
+                "first_limit_time": float(latest.get("first_limit_time", 999999) or 999999),
+                "last_limit_time": float(latest.get("last_limit_time", 999999) or 999999),
+                "open_times": int(float(latest.get("open_times", 0) or 0)),
+            })
+        if rows:
+            self.dragon_pool = self._with_sector_rank(pd.DataFrame(rows))
+
+    def score_one(self, symbol: str, df: object) -> dict | None:
+        if df is None or len(df) < 5:
+            return None
+        latest = df.iloc[-1]
+        pool_row = self._pool_row(symbol, str(latest.get("name", "")))
+        if pool_row is None:
+            return None
+
+        close = float(latest.get("close", 0) or 0)
+        open_ = float(latest.get("open", close) or close)
+        high = float(latest.get("high", close) or close)
+        low = float(latest.get("low", close) or close)
+        amount = float(pool_row.get("amount", latest.get("amount", 0)) or 0)
+        seal_amount = float(pool_row.get("seal_amount", 0) or 0)
+        open_times = int(float(pool_row.get("open_times", 0) or 0))
+        pct_change = float(pool_row.get("pct_change", latest.get("pct_change", 0)) or 0)
+        recent_high = float(df["high"].tail(10).max()) if "high" in df.columns else high
+        if close <= 0:
+            return None
+        # 分档过滤成交额:创业板/科创板/北交所 50M;主板 80M
+        min_amt = self._min_amount_for(symbol)
+        if amount < min_amt:
+            return None
+        if seal_amount < self.params.min_seal_amount:
+            return None
+        if open_times > self.params.max_open_times:
+            return None
+
+        limit_up_count = int(float(pool_row.get("limit_up_count", 0) or 0))
+        if limit_up_count < self.params.min_limit_up_count:
+            return None
+
+        sector_rank = int(float(pool_row.get("sector_rank", 999) or 999))
+        role = str(pool_row.get("role", "unknown"))
+        if self.params.only_sector_leader and sector_rank != 1:
+            return None
+        if role == "position_switch" and not self.params.allow_position_switch:
+            return None
+
+        buy_point = self._buy_point(close, open_, high, low, recent_high, pct_change, open_times)
+        if not buy_point:
+            return None
+        # 只对"今日可执行"买点做封板可买性检查;watch 买点(limit_up_leader)允许已封板
+        if buy_point in self.EXECUTABLE_BUY_POINTS:
+            if self._cannot_buy_live(symbol, open_, high, low, pct_change):
+                return None
+
+        score = self._dragon_score(pool_row, buy_point)
+        return {
+            "symbol": symbol,
+            "name": pool_row.get("name", ""),
+            "sector": pool_row.get("sector", ""),
+            "role": role,
+            "sector_rank": sector_rank,
+            "limit_up_count": limit_up_count,
+            "seal_amount": seal_amount,
+            "open_times": open_times,
+            "buy_point": buy_point,
+            "price": close,
+            "score": score,
+            "weight": min(max(score, 0.30), 1.0),
+        }
+
+
+    def _min_amount_for(self, symbol: str) -> float:
+        """按板块分档返回最低成交额阈值。
+
+        - 创业板/科创板/创业板存量(300/301/688): min_amount_growth(默认 50M)
+        - 主板(60x/00x)/北交所(8x/4x): min_amount_main(默认 80M)
+        """
+        code = str(symbol).split(".", 1)[0]
+        if code.startswith(("300", "301", "688")):
+            return float(self.params.min_amount_growth)
+        return float(self.params.min_amount_main)
+
+    def _dragon_score(self, row: dict, buy_point: str) -> float:
+        limit_up_count = float(row.get("limit_up_count", 0) or 0)
+        sector_rank = float(row.get("sector_rank", 999) or 999)
+        amount = float(row.get("amount", 0) or 0)
+        seal_amount = float(row.get("seal_amount", 0) or 0)
+        open_times = float(row.get("open_times", 0) or 0)
+        first_limit_rank = float(row.get("first_limit_rank", 1) or 1)
+        sector = str(row.get("sector", ""))
+        sector_heat = self._sector_bonus(sector, str(row.get("name", "")))
+        # 板块晋级率(昨日涨停今日继续涨停的比例) — 高晋级率板块说明接力盘强
+        promo = float((self.promotion_stats.get("sector_promotion", {}) or {}).get(sector, 0) or 0)
+
+        ladder_score = min(limit_up_count, 6) / 6
+        sector_rank_score = 1.0 if sector_rank == 1 else max(0.0, 1 - (sector_rank - 1) * 0.25)
+        seal_score = min(seal_amount / max(amount, 1), 0.30) / 0.30
+        first_limit_score = 1 - min(first_limit_rank, 1)
+        open_penalty = min(open_times, 5) / 5
+        buy_point_bonus = {"limit_up_leader": 0.12, "weak_to_strong": 0.10, "divergence_to_consensus": 0.08, "first_negative_pullback": 0.03}.get(buy_point, 0)
+        role_bonus = 0.08 if row.get("role") == "absolute_leader" else 0.04 if row.get("role") == "position_switch" else 0
+        # 晋级率加成:0.5+ 视为强接力,加 0.06;0.3-0.5 加 0.03;低于 0.3 不加
+        promo_bonus = 0.06 if promo >= 0.5 else 0.03 if promo >= 0.3 else 0.0
+
+        return (
+            ladder_score * 0.26
+            + sector_rank_score * 0.20
+            + seal_score * 0.16
+            + first_limit_score * 0.10
+            + sector_heat * 0.10
+            + buy_point_bonus
+            + role_bonus
+            + promo_bonus
+            - open_penalty * 0.12
+        )
+
+
+    @staticmethod
+    def _limit_up_threshold(symbol: str) -> float:
+        """A股各板涨停阈值。
+
+        - 主板(沪深 60x/00x): ±10% (阈值 9.5)
+        - 创业板/科创板/创业板存量(300/301/688): ±20% (阈值 19.5)
+        - 北交所 (8/4 开头): ±30% (阈值 29.5)
+        """
+        code = str(symbol).split(".", 1)[0]
+        if code.startswith(("8", "4")):
+            return 29.5
+        if code.startswith(("300", "301", "688")):
+            return 19.5
+        return 9.5
+
+    @staticmethod
+    def _down_limit_threshold(symbol: str) -> float:
+        code = str(symbol).split(".", 1)[0]
+        if code.startswith(("8", "4")):
+            return -29.5
+        if code.startswith(("300", "301", "688")):
+            return -19.5
+        return -9.5
+
+    @classmethod
+    def _cannot_buy_live(cls, symbol: str, open_: float, high: float, low: float, pct_change: float) -> bool:
+        """判断当前价位是否"已实质封死涨停板,买不到"。
+
+        排除场景:
+        - 无效开盘价
+        - 跌停(无买点)
+        - 一字板(high<=low 且达涨停)
+        - **临近涨停 0.3 内** —— 已封板或随时封板,挂单极难成交
+        """
+        up = cls._limit_up_threshold(symbol)
+        down = cls._down_limit_threshold(symbol)
+        if open_ <= 0:
+            return True
+        if pct_change <= down:
+            return True
+        # 一字板
+        if high <= low and pct_change >= up:
+            return True
+        # 临近涨停 0.3% 内 —— 视为已封板,无法稳定成交
+        if pct_change >= up - 0.3:
+            return True
+        return False
+
+    def _buy_point(self, close: float, open_: float, high: float, low: float, recent_high: float, pct_change: float, open_times: int) -> str | None:
+        if high <= low:
+            return None
+        near_high = recent_high > 0 and close >= recent_high * (1 - self.params.near_high_pct)
+        strong_body = open_ > 0 and close > open_ and (close - open_) / open_ >= 0.012
+        close_near_high = (high - close) / max(high - low, 0.01) <= 0.25
+
+        # 涨停/准涨停不是过滤对象；龙头战法的核心恰恰来自涨停梯队。
+        # 这里不因 pct_change 高而剔除，只用开板次数、封单质量和成交性判断风险。
+        if pct_change >= 9.5 and close_near_high and open_times <= 1:
+            return "limit_up_leader"
+
+        # 弱转强：高辨识度标的，强势收盘，但尚未进入板上不可成交区间。
+        if 5.0 <= pct_change <= self.params.max_chase_pct_change and close_near_high and open_times <= 1:
+            return "weak_to_strong"
+
+        # 分歧转一致：允许开板，但要求收回高位。
+        if self.params.min_buy_pct_change <= pct_change and near_high and strong_body and close_near_high:
+            return "divergence_to_consensus"
+
+        if self.params.allow_first_negative_pullback and -5.0 <= pct_change <= 1.0 and near_high and close > low * 1.03:
+            return "first_negative_pullback"
+        return None
+
+    def _with_sector_rank(self, pool: pd.DataFrame) -> pd.DataFrame:
+        if pool.empty:
+            return pool
+        df = pool.copy()
+        for col in ["limit_up_count", "score", "amount", "seal_amount", "open_times"]:
+            if col not in df.columns:
+                df[col] = 0
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+        if "sector" not in df.columns:
+            df["sector"] = ""
+        df["sector"] = df["sector"].astype(str).str.strip()
+        if "first_limit_time" not in df.columns:
+            df["first_limit_time"] = 999999
+        df["role"] = "unknown"
+        df["sector_rank"] = 999
+        df["sector_max_limit"] = 0
+        invalid_sector = df["sector"].isin(["", "nan", "None", "未分组", "未知"])
+        valid = df[~invalid_sector].copy()
+        if valid.empty:
+            return df
+        valid["first_limit_num"] = pd.to_numeric(valid["first_limit_time"], errors="coerce").fillna(999999)
+        # 板块只 1 票时 pct rank=1.0 会让 first_limit_score 变 0;手动给单票板块 0(最早封板)
+        sector_size = valid.groupby("sector")["sector"].transform("size")
+        raw_rank = valid.groupby("sector")["first_limit_num"].rank(method="min", pct=True)
+        valid["first_limit_rank"] = raw_rank.where(sector_size > 1, 0.0)
+        # 给连板数加 cap,防止极端连板霸榜导致同板块其他票永无翻身
+        valid["limit_up_count_capped"] = valid["limit_up_count"].clip(upper=5)
+        valid["sector_rank_score"] = (
+            valid["limit_up_count_capped"] * 1000000
+            + valid["seal_amount"].rank(pct=True) * 1000
+            + valid["amount"].rank(pct=True) * 100
+            - valid["open_times"] * 10
+            - valid["first_limit_rank"]
+        )
+        valid["sector_rank"] = valid.groupby("sector")["sector_rank_score"].rank(method="first", ascending=False).astype(int)
+        valid["sector_max_limit"] = valid.groupby("sector")["limit_up_count"].transform("max")
+        valid["role"] = "back_row"
+        valid.loc[(valid["sector_rank"] == 1) & (valid["limit_up_count"] >= valid["sector_max_limit"]), "role"] = "absolute_leader"
+        valid.loc[(valid["sector_rank"] == 1) & (valid["limit_up_count"] < valid["sector_max_limit"]), "role"] = "position_switch"
+        for col in ["first_limit_num", "first_limit_rank", "sector_rank_score", "sector_rank", "sector_max_limit", "role", "limit_up_count_capped"]:
+            df.loc[valid.index, col] = valid[col]
+        return df
+
+    def _pool_row(self, symbol: str, name: str) -> dict | None:
+        if self.dragon_pool.empty:
+            return None
+        rows = self.dragon_pool[self.dragon_pool["symbol"].astype(str) == symbol]
+        if rows.empty:
+            return None
+        return rows.iloc[0].to_dict()
+
+    def _sector_bonus(self, sector: str, name: str) -> float:
+        bonus = 0.0
+        for group in ("concept_heat", "industry_heat"):
+            for idx, row in enumerate(self.market_context.get(group, [])[:10]):
+                board = str(row.get("name", ""))
+                leader = str(row.get("leader_stock", ""))
+                if sector and (sector in board or board in sector):
+                    bonus = max(bonus, 1.0 - idx * 0.06)
+                if name and name == leader:
+                    bonus = max(bonus, 1.15)
+        return bonus
+
+    def _emotion_phase(self) -> str:
+        return str(self.market_context.get("emotion", {}).get("phase", "unknown"))
+
+    @staticmethod
+    def _load_json(path: str) -> dict:
+        p = _project_path(path)
+        if not p.exists():
+            return {}
+        try:
+            return json.loads(p.read_text(encoding="utf-8"))
+        except Exception as exc:
+            import sys
+            print(f"warn: load_json {p} failed: {exc}", file=sys.stderr)
+            return {}
+
+    @staticmethod
+    def _load_pool(path: str) -> pd.DataFrame:
+        p = _project_path(path)
+        if not p.exists():
+            return pd.DataFrame()
+        try:
+            return pd.read_csv(p)
+        except Exception:
+            return pd.DataFrame()

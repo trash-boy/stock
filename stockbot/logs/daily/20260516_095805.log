@@ -1,0 +1,201 @@
+===== build_universe returncode=0 =====
+$ /Users/bytedance/PycharmProjects/stock/.venv/bin/python scripts/build_universe.py --config config.yaml --limit 30 --output stockbot/data/universe.csv
+--- stdout ---
+universe_size=30 output=stockbot/data/universe.csv
+300274.SZ 阳光电源 price=152.95 pct=13.271 amount=25268870998 turnover=0.0 score=1.0247
+688012.SH 中微公司 price=432.9 pct=11.811 amount=16018523192 turnover=0.0 score=1.0235
+688820.SH 盛合晶微 price=183.84 pct=18.76 amount=9497922017 turnover=0.0 score=1.0211
+688017.SH 绿的谐波 price=305.5 pct=15.283 amount=5845814799 turnover=0.0 score=1.0167
+002407.SZ 多氟多 price=36.47 pct=10.015 amount=5604165251 turnover=0.0 score=1.0161
+300083.SZ 创世纪 price=11.93 pct=13.295 amount=3815556745 turnover=0.0 score=1.009
+002031.SZ 巨轮智能 price=8.4 pct=9.948 amount=3874956188 turnover=0.0 score=1.0087
+688143.SH 长盈通 price=108.2 pct=18.122 amount=3405587086 turnover=0.0 score=1.0055
+301171.SZ 易点天下 price=43.7 pct=9.414 amount=5016644372 turnover=0.0 score=1.0026
+300567.SZ 精测电子 price=175.0 pct=10.063 amount=2620203168 turnover=0.0 score=0.9952
+688700.SH 东威科技 price=77.0 pct=14.891 amount=2555382309 turnover=0.0 score=0.9944
+688535.SH 华海诚科 price=133.77 pct=15.488 amount=2453050004 turnover=0.0 score=0.9928
+300632.SZ 光莆股份 price=35.26 pct=10.706 amount=2427462697 turnover=0.0 score=0.9923
+301297.SZ 富乐德 price=54.18 pct=10.369 amount=2389425522 turnover=0.0 score=0.9913
+002181.SZ 粤 传 媒 price=19.69 pct=10.0 amount=1945481717 turnover=0.0 score=0.9806
+688409.SH 富创精密 price=162.27 pct=14.251 amount=1938726272 turnover=0.0 score=0.9804
+301486.SZ 致尚科技 price=257.51 pct=8.517 amount=3607129162 turnover=0.0 score=0.9779
+301377.SZ 鼎泰高科 price=247.69 pct=9.597 amount=2108228422 turnover=0.0 score=0.9758
+002196.SZ 方正电机 price=15.36 pct=10.029 amount=1600254997 turnover=0.0 score=0.9676
+301666.SZ 大普微 price=680.0 pct=7.765 amount=4276571353 turnover=0.0 score=0.9674
+
+--- stderr ---
+
+Please wait for a moment:   0%|          | 0/69 [00:00<?, ?it/s]
+Please wait for a moment:   1%|▏         | 1/69 [00:00<00:09,  7.39it/s]
+Please wait for a moment:   3%|▎         | 2/69 [00:00<00:08,  7.71it/s]
+Please wait for a moment:   4%|▍         | 3/69 [00:00<00:08,  7.53it/s]
+Please wait for a moment:   6%|▌         | 4/69 [00:00<00:08,  7.51it/s]
+Please wait for a moment:   7%|▋         | 5/69 [00:00<00:08,  7.56it/s]
+Please wait for a moment:   9%|▊         | 6/69 [00:00<00:08,  7.62it/s]
+Please wait for a moment:  10%|█         | 7/69 [00:00<00:08,  7.71it/s]
+Please wait for a moment:  12%|█▏        | 8/69 [00:01<00:08,  7.58it/s]
+Please wait for a moment:  13%|█▎        | 9/69 [00:01<00:07,  7.57it/s]
+Please wait for a moment:  14%|█▍        | 10/69 [00:01<00:07,  7.47it/s]
+Please wait for a moment:  16%|█▌        | 11/69 [00:01<00:07,  7.58it/s]
+Please wait for a moment:  17%|█▋        | 12/69 [00:01<00:07,  7.45it/s]
+Please wait for a moment:  19%|█▉        | 13/69 [00:01<00:07,  7.42it/s]
+Please wait for a moment:  20%|██        | 14/69 [00:01<00:07,  7.40it/s]
+Please wait for a moment:  22%|██▏       | 15/69 [00:01<00:07,  7.40it/s]
+Please wait for a moment:  23%|██▎       | 16/69 [00:02<00:07,  6.94it/s]
+Please wait for a moment:  25%|██▍       | 17/69 [00:02<00:07,  6.78it/s]
+Please wait for a moment:  26%|██▌       | 18/69 [00:02<00:07,  6.65it/s]
+Please wait for a moment:  28%|██▊       | 19/69 [00:02<00:07,  6.60it/s]
+Please wait for a moment:  29%|██▉       | 20/69 [00:02<00:07,  6.53it/s]
+Please wait for a moment:  30%|███       | 21/69 [00:02<00:07,  6.47it/s]
+Please wait for a moment:  32%|███▏      | 22/69 [00:03<00:12,  3.88it/s]
+Please wait for a moment:  33%|███▎      | 23/69 [00:03<00:10,  4.51it/s]
+Please wait for a moment:  35%|███▍      | 24/69 [00:03<00:08,  5.10it/s]
+Please wait for a moment:  36%|███▌      | 25/69 [00:03<00:07,  5.66it/s]
+Please wait for a moment:  38%|███▊      | 26/69 [00:03<00:06,  6.17it/s]
+Please wait for a moment:  39%|███▉      | 27/69 [00:04<00:06,  6.54it/s]
+Please wait for a moment:  41%|████      | 28/69 [00:04<00:10,  3.85it/s]
+Please wait for a moment:  42%|████▏     | 29/69 [00:04<00:08,  4.51it/s]
+Please wait for a moment:  43%|████▎     | 30/69 [00:04<00:07,  5.12it/s]
+Please wait for a moment:  45%|████▍     | 31/69 [00:05<00:06,  5.66it/s]
+Please wait for a moment:  46%|████▋     | 32/69 [00:05<00:06,  6.09it/s]
+Please wait for a moment:  48%|████▊     | 33/69 [00:05<00:05,  6.60it/s]
+Please wait for a moment:  49%|████▉     | 34/69 [00:05<00:05,  6.74it/s]
+Please wait for a moment:  51%|█████     | 35/69 [00:05<00:04,  7.07it/s]
+Please wait for a moment:  52%|█████▏    | 36/69 [00:05<00:04,  7.35it/s]
+Please wait for a moment:  54%|█████▎    | 37/69 [00:05<00:04,  7.34it/s]
+Please wait for a moment:  55%|█████▌    | 38/69 [00:05<00:04,  7.24it/s]
+Please wait for a moment:  57%|█████▋    | 39/69 [00:06<00:04,  7.20it/s]
+Please wait for a moment:  58%|█████▊    | 40/69 [00:06<00:04,  7.12it/s]
+Please wait for a moment:  59%|█████▉    | 41/69 [00:06<00:03,  7.35it/s]
+Please wait for a moment:  61%|██████    | 42/69 [00:06<00:03,  7.45it/s]
+Please wait for a moment:  62%|██████▏   | 43/69 [00:06<00:03,  7.42it/s]
+Please wait for a moment:  64%|██████▍   | 44/69 [00:06<00:03,  7.47it/s]
+Please wait for a moment:  65%|██████▌   | 45/69 [00:06<00:03,  7.63it/s]
+Please wait for a moment:  67%|██████▋   | 46/69 [00:07<00:03,  7.59it/s]
+Please wait for a moment:  68%|██████▊   | 47/69 [00:07<00:02,  7.60it/s]
+Please wait for a moment:  70%|██████▉   | 48/69 [00:07<00:02,  7.45it/s]
+Please wait for a moment:  71%|███████   | 49/69 [00:07<00:02,  7.39it/s]
+Please wait for a moment:  72%|███████▏  | 50/69 [00:07<00:02,  7.45it/s]
+Please wait for a moment:  74%|███████▍  | 51/69 [00:07<00:02,  7.42it/s]
+Please wait for a moment:  75%|███████▌  | 52/69 [00:07<00:02,  7.52it/s]
+Please wait for a moment:  77%|███████▋  | 53/69 [00:07<00:02,  7.63it/s]
+Please wait for a moment:  78%|███████▊  | 54/69 [00:08<00:01,  7.50it/s]
+Please wait for a moment:  80%|███████▉  | 55/69 [00:08<00:01,  7.67it/s]
+Please wait for a moment:  81%|████████  | 56/69 [00:08<00:01,  7.51it/s]
+Please wait for a moment:  83%|████████▎ | 57/69 [00:08<00:01,  7.58it/s]
+Please wait for a moment:  84%|████████▍ | 58/69 [00:08<00:01,  7.61it/s]
+Please wait for a moment:  86%|████████▌ | 59/69 [00:08<00:01,  7.74it/s]
+Please wait for a moment:  87%|████████▋ | 60/69 [00:08<00:01,  7.59it/s]
+Please wait for a moment:  88%|████████▊ | 61/69 [00:08<00:01,  7.55it/s]
+Please wait for a moment:  90%|████████▉ | 62/69 [00:09<00:00,  7.72it/s]
+Please wait for a moment:  91%|█████████▏| 63/69 [00:09<00:00,  7.32it/s]
+Please wait for a moment:  93%|█████████▎| 64/69 [00:09<00:00,  7.23it/s]
+Please wait for a moment:  94%|█████████▍| 65/69 [00:09<00:00,  7.25it/s]
+Please wait for a moment:  96%|█████████▌| 66/69 [00:09<00:00,  7.39it/s]
+Please wait for a moment:  97%|█████████▋| 67/69 [00:09<00:00,  7.57it/s]
+Please wait for a moment:  99%|█████████▊| 68/69 [00:09<00:00,  7.72it/s]
+Please wait for a moment: 100%|██████████| 69/69 [00:10<00:00,  2.71it/s]
+                                                                         
+
+===== build_market_context returncode=1 =====
+$ /Users/bytedance/PycharmProjects/stock/.venv/bin/python scripts/build_market_context.py --config config.yaml --top 20 --timeout 20
+--- stdout ---
+warn: spot timeout after 20s
+warn: spot timeout after 20s
+
+--- stderr ---
+
+Please wait for a moment:   0%|          | 0/69 [00:00<?, ?it/s]
+Please wait for a moment:   1%|▏         | 1/69 [00:00<00:36,  1.88it/s]
+Please wait for a moment:   3%|▎         | 2/69 [00:00<00:19,  3.41it/s]
+Please wait for a moment:   4%|▍         | 3/69 [00:01<00:25,  2.57it/s]
+Please wait for a moment:   0%|          | 0/69 [00:00<?, ?it/s]
+Please wait for a moment:   1%|▏         | 1/69 [00:00<00:44,  1.54it/s]
+Please wait for a moment:   3%|▎         | 2/69 [00:01<00:36,  1.82it/s]
+Please wait for a moment:   4%|▍         | 3/69 [00:01<00:23,  2.79it/s]
+Please wait for a moment:   6%|▌         | 4/69 [00:01<00:17,  3.73it/s]
+Please wait for a moment:   7%|▋         | 5/69 [00:01<00:21,  2.92it/s]
+Please wait for a moment:   9%|▊         | 6/69 [00:02<00:24,  2.53it/s]
+Please wait for a moment:  10%|█         | 7/69 [00:02<00:19,  3.23it/s]
+Please wait for a moment:  12%|█▏        | 8/69 [00:02<00:15,  3.99it/s]
+Please wait for a moment:  13%|█▎        | 9/69 [00:02<00:12,  4.67it/s]
+Please wait for a moment:  14%|█▍        | 10/69 [00:02<00:11,  5.36it/s]
+Please wait for a moment:  16%|█▌        | 11/69 [00:03<00:17,  3.29it/s]
+Please wait for a moment:  17%|█▋        | 12/69 [00:03<00:14,  4.00it/s]
+Please wait for a moment:  19%|█▉        | 13/69 [00:03<00:12,  4.66it/s]
+Please wait for a moment:  20%|██        | 14/69 [00:03<00:10,  5.30it/s]
+Please wait for a moment:  22%|██▏       | 15/69 [00:03<00:09,  5.94it/s]
+Please wait for a moment:  23%|██▎       | 16/69 [00:04<00:08,  6.43it/s]
+Please wait for a moment:  25%|██▍       | 17/69 [00:04<00:07,  6.84it/s]
+Please wait for a moment:  26%|██▌       | 18/69 [00:04<00:07,  7.11it/s]
+Please wait for a moment:  28%|██▊       | 19/69 [00:04<00:07,  6.79it/s]
+Please wait for a moment:  29%|██▉       | 20/69 [00:04<00:07,  6.93it/s]
+Please wait for a moment:  30%|███       | 21/69 [00:04<00:06,  7.25it/s]
+Please wait for a moment:  32%|███▏      | 22/69 [00:04<00:06,  7.54it/s]
+Please wait for a moment:  33%|███▎      | 23/69 [00:05<00:06,  7.59it/s]
+Please wait for a moment:  35%|███▍      | 24/69 [00:05<00:05,  7.77it/s]
+Please wait for a moment:  36%|███▌      | 25/69 [00:05<00:05,  7.79it/s]
+Please wait for a moment:  38%|███▊      | 26/69 [00:05<00:05,  7.91it/s]
+Please wait for a moment:  39%|███▉      | 27/69 [00:05<00:05,  8.03it/s]
+Please wait for a moment:  41%|████      | 28/69 [00:05<00:05,  8.13it/s]
+Please wait for a moment:  42%|████▏     | 29/69 [00:05<00:04,  8.16it/s]
+Please wait for a moment:  43%|████▎     | 30/69 [00:05<00:04,  7.89it/s]
+Please wait for a moment:  45%|████▍     | 31/69 [00:06<00:09,  4.10it/s]
+Please wait for a moment:  46%|████▋     | 32/69 [00:06<00:07,  4.75it/s]
+Please wait for a moment:  48%|████▊     | 33/69 [00:06<00:06,  5.38it/s]
+Please wait for a moment:  49%|████▉     | 34/69 [00:06<00:05,  5.88it/s]
+Please wait for a moment:  51%|█████     | 35/69 [00:06<00:05,  6.40it/s]
+Please wait for a moment:  52%|█████▏    | 36/69 [00:07<00:10,  3.26it/s]
+Please wait for a moment:  54%|█████▎    | 37/69 [00:08<00:16,  1.98it/s]
+Please wait for a moment:  55%|█████▌    | 38/69 [00:08<00:12,  2.54it/s]
+Please wait for a moment:  57%|█████▋    | 39/69 [00:08<00:09,  3.16it/s]
+Please wait for a moment:  58%|█████▊    | 40/69 [00:09<00:11,  2.45it/s]
+Please wait for a moment:  59%|█████▉    | 41/69 [00:09<00:12,  2.27it/s]
+Please wait for a moment:  61%|██████    | 42/69 [00:10<00:12,  2.17it/s]
+Please wait for a moment:  62%|██████▏   | 43/69 [00:10<00:09,  2.76it/s]
+Please wait for a moment:  64%|██████▍   | 44/69 [00:10<00:07,  3.44it/s]
+Please wait for a moment:  65%|██████▌   | 45/69 [00:10<00:05,  4.07it/s]
+Please wait for a moment:  67%|██████▋   | 46/69 [00:10<00:04,  4.81it/s]
+Please wait for a moment:  68%|██████▊   | 47/69 [00:11<00:04,  5.40it/s]
+Please wait for a moment:  70%|██████▉   | 48/69 [00:11<00:03,  6.06it/s]
+Please wait for a moment:  71%|███████   | 49/69 [00:11<00:03,  6.59it/s]
+Please wait for a moment:  72%|███████▏  | 50/69 [00:11<00:02,  6.61it/s]
+Please wait for a moment:  74%|███████▍  | 51/69 [00:11<00:04,  3.94it/s]
+Please wait for a moment:  75%|███████▌  | 52/69 [00:12<00:03,  4.63it/s]
+Please wait for a moment:  77%|███████▋  | 53/69 [00:12<00:02,  5.34it/s]
+Please wait for a moment:  78%|███████▊  | 54/69 [00:12<00:04,  3.35it/s]
+Please wait for a moment:  80%|███████▉  | 55/69 [00:12<00:03,  4.03it/s]
+Please wait for a moment:  81%|████████  | 56/69 [00:13<00:02,  4.66it/s]
+Please wait for a moment:  83%|████████▎ | 57/69 [00:13<00:02,  5.32it/s]
+Please wait for a moment:  84%|████████▍ | 58/69 [00:13<00:01,  5.70it/s]
+Please wait for a moment:  86%|████████▌ | 59/69 [00:13<00:01,  6.23it/s]
+Please wait for a moment:  87%|████████▋ | 60/69 [00:13<00:02,  4.15it/s]
+Please wait for a moment:  88%|████████▊ | 61/69 [00:14<00:01,  4.78it/s]
+Please wait for a moment:  90%|████████▉ | 62/69 [00:14<00:01,  5.36it/s]无法获取全市场行情，无法判断情绪周期
+/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 2 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+
+===== run_trader_paper returncode=0 =====
+$ /Users/bytedance/PycharmProjects/stock/.venv/bin/python scripts/run_trader.py --config config.yaml --universe-file stockbot/data/universe.csv --top 10
+--- stdout ---
+warn: skip 300274.SZ, akshare error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+warn: skip 688012.SH, akshare error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+warn: skip 688820.SH, akshare error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+warn: skip 688017.SH, akshare error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+warn: skip 002407.SZ, akshare error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+warn: skip 300083.SZ, akshare error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+warn: skip 002031.SZ, akshare error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+warn: skip 688143.SH, akshare error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+warn: skip 301171.SZ, akshare error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+warn: skip 300567.SZ, akshare error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+signals=0 accepted_orders=0
+
+--- stderr ---
+
+===== generate_daily_report returncode=0 =====
+$ /Users/bytedance/PycharmProjects/stock/.venv/bin/python scripts/generate_daily_report.py --config config.yaml
+--- stdout ---
+report_md=stockbot/reports/daily_report_2026-05-16.md
+report_json=stockbot/reports/daily_report_2026-05-16.json
+
+--- stderr ---

@@ -1,0 +1,16 @@
+===== run_trader_paper returncode=0 =====
+$ /Users/bytedance/PycharmProjects/stock/.venv/bin/python scripts/run_trader.py --config config.yaml --universe-file stockbot/data/universe.csv --top 2
+--- stdout ---
+warn: skip 300274.SZ, akshare error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+warn: skip 688012.SH, akshare error: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+signals=0 accepted_orders=0
+
+--- stderr ---
+
+===== generate_daily_report returncode=0 =====
+$ /Users/bytedance/PycharmProjects/stock/.venv/bin/python scripts/generate_daily_report.py --config config.yaml
+--- stdout ---
+report_md=stockbot/reports/daily_report_2026-05-16.md
+report_json=stockbot/reports/daily_report_2026-05-16.json
+
+--- stderr ---

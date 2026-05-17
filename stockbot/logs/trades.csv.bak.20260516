@@ -1,0 +1,4 @@
+time,symbol,side,quantity,price,amount,reason
+2026-05-16T09:32:02.441075,000001.SZ,BUY,300,10.0,3000.0,manual_paper_test
+2026-05-16T09:32:13.936363,000001.SZ,BUY,300,10.0,3000.0,manual_paper_test
+2026-05-16T09:51:33,000001.SZ,BUY,300,10.0,3000.0,manual_paper_test

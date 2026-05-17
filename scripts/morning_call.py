@@ -1,0 +1,211 @@
+"""Morning call: 9:20 触发,读昨日 watch_list_tomorrow.csv,推飞书集合竞价候选。
+
+工作流:
+1. 检查今天是否交易日,否则 SKIP
+2. 读 stockbot/data/watch_list_tomorrow.csv
+3. 过滤 watch_date != 上一个交易日的旧记录(避免长假/连休污染)
+4. 推送 Lark:每只票给出涨停参考价 (price * (1+limit_up_pct))
+5. 提示用户在 9:25 前手动集合竞价挂单
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import sys
+import urllib.request
+from datetime import date, datetime, timedelta
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+
+def _is_trade_day(d: date) -> bool:
+    try:
+        from stockbot.utils.calendar import is_trade_day
+        return is_trade_day(d)
+    except Exception:
+        return d.weekday() < 5
+
+
+def _last_trade_day_before(today: date) -> date:
+    """返回 today 之前最近的一个交易日。"""
+    d = today - timedelta(days=1)
+    for _ in range(15):
+        if _is_trade_day(d):
+            return d
+        d -= timedelta(days=1)
+    return today - timedelta(days=1)
+
+
+def _limit_up_pct(symbol: str) -> float:
+    code = str(symbol).split(".", 1)[0]
+    if code.startswith(("8", "4")):
+        return 0.30
+    if code.startswith(("300", "301", "688")):
+        return 0.20
+    return 0.10
+
+
+def _get_pre_open(symbol: str, retry: int = 1) -> float | None:
+    """获取个股 9:15-9:25 集合竞价虚拟开盘价。
+
+    使用 akshare.stock_bid_ask_em 拿"今开"字段;若 9:15 前调用会拿到昨收,需排除。
+    返回 None 表示无法获取(网络或时间窗口外)。
+    """
+    try:
+        import akshare as ak
+        # stock_bid_ask_em 的"代码"参数需要去掉后缀
+        code = str(symbol).split(".", 1)[0]
+        df = ak.stock_bid_ask_em(symbol=code)
+        if df is None or len(df) == 0:
+            return None
+        # 列名通常是["item", "value"];"今开" 字段
+        rows = {str(r["item"]): r["value"] for _, r in df.iterrows()}
+        for key in ("今开", "open", "今日开盘"):
+            v = rows.get(key)
+            if v is not None and float(v) > 0:
+                return float(v)
+        return None
+    except Exception:
+        if retry > 0:
+            import time
+            time.sleep(0.4)
+            return _get_pre_open(symbol, retry - 1)
+        return None
+
+
+def _filter_call_auction(cfg: dict, symbol: str, last_close: float) -> tuple[bool, str, float | None]:
+    """返回 (allow, label, gap_pct).
+
+    allow=False 表示集合竞价异常应跳过;label 给人读的解释。
+    """
+    flt = (cfg.get("call_auction_filter", {}) or {})
+    if not flt.get("enabled"):
+        return True, "filter_off", None
+    if last_close <= 0:
+        return True, "no_ref", None
+    pre_open = _get_pre_open(symbol)
+    if pre_open is None or pre_open <= 0:
+        return True, "no_pre_open", None
+    gap = (pre_open - last_close) / last_close * 100
+    high = float(flt.get("max_premium_pct", 7.0))
+    low = float(flt.get("min_premium_pct", -2.0))
+    if gap > high:
+        return False, f"高开过大 {gap:+.2f}% > {high}", gap
+    if gap < low:
+        return False, f"低开破位 {gap:+.2f}% < {low}", gap
+    return True, f"竞价 {gap:+.2f}%", gap
+
+
+def _push_lark(cfg: dict, text: str) -> bool:
+    webhook = (cfg.get("lark", {}) or {}).get("webhook", "").strip()
+    if not webhook:
+        print("[morning_call] WARN webhook 未配置,降级 stdout", file=sys.stderr)
+        print(text)
+        return False
+    try:
+        body = json.dumps({"msg_type": "text", "content": {"text": text}}).encode("utf-8")
+        req = urllib.request.Request(webhook, data=body, headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=8).read()
+        return True
+    except Exception as e:
+        print(f"[morning_call] push_failed err={e}", file=sys.stderr)
+        return False
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", default="config.yaml")
+    parser.add_argument("--watch-file", default="stockbot/data/watch_list_tomorrow.csv")
+    parser.add_argument("--max-age-days", type=int, default=4,
+                        help="watch_date 距今超过该天数则丢弃(防止长假残留)")
+    parser.add_argument("--force", action="store_true", help="非交易日也推")
+    args = parser.parse_args()
+
+    today = date.today()
+    if not args.force and not _is_trade_day(today):
+        print(f"morning_call=SKIP reason=non_trade_day date={today}")
+        return 0
+
+    # cfg
+    try:
+        from stockbot.core.config import load_config
+        cfg = load_config(args.config)
+    except Exception as e:
+        print(f"morning_call=FAILED reason=config_load err={e}", file=sys.stderr)
+        return 2
+
+    watch_path = Path(args.watch_file)
+    if not watch_path.is_absolute():
+        watch_path = PROJECT_ROOT / watch_path
+    if not watch_path.exists():
+        msg = f"⚠️ stockbot morning_call: 没有 watch list ({watch_path})\n昨日没有产出涨停龙头观察池"
+        _push_lark(cfg, msg)
+        print(f"morning_call=NO_WATCH path={watch_path}")
+        return 0
+
+    last_td = _last_trade_day_before(today)
+    cutoff = today - timedelta(days=args.max_age_days)
+
+    rows: list[dict] = []
+    with watch_path.open("r", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            wd = (r.get("watch_date") or "").strip()
+            try:
+                wd_date = datetime.strptime(wd, "%Y-%m-%d").date()
+            except Exception:
+                continue
+            if wd_date < cutoff:
+                continue
+            rows.append(r)
+
+    if not rows:
+        msg = f"📭 stockbot morning_call ({today}): 昨日 watch list 为空或已过期"
+        _push_lark(cfg, msg)
+        print("morning_call=EMPTY")
+        return 0
+
+    # 推送
+    lines = [
+        f"🌅 stockbot morning_call · {today}",
+        f"昨交易日({last_td})涨停龙头观察池,今日 9:25 前可考虑集合竞价挂单。",
+        f"⚠️ 排队靠前才有机会成交,挂不到不要追高!",
+        "",
+    ]
+    skipped: list[str] = []
+    for r in rows[:10]:
+        try:
+            close = float(r.get("price") or 0)
+        except Exception:
+            close = 0.0
+        sym = r.get("symbol", "")
+        up = _limit_up_pct(sym)
+        ref_limit = round(close * (1 + up), 2) if close > 0 else 0.0
+        # 集合竞价过滤
+        allow, label, gap = _filter_call_auction(cfg, sym, close)
+        if not allow:
+            skipped.append(f"{sym} {r.get('name')}: {label}")
+            continue
+        suffix = f" | {label}" if gap is not None else ""
+        lines.append(
+            f"• {sym} {r.get('name')} | 板块:{r.get('sector')} | 连板:{r.get('limit_up_count')} | "
+            f"昨收:{close} | 涨停参考价:{ref_limit} | role:{r.get('role')}{suffix}"
+        )
+    if skipped:
+        lines.append("")
+        lines.append("⚠️ 以下票被集合竞价过滤(已跳过):")
+        for s in skipped:
+            lines.append(f"• {s}")
+    lines.append("")
+    lines.append("使用建议:择 1-2 只情绪/板块龙头,以涨停价集合竞价挂单。")
+    text = "\n".join(lines)
+    pushed = _push_lark(cfg, text)
+    print(f"morning_call=OK pushed={pushed} count={len(rows)}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

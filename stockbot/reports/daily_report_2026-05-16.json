@@ -1,0 +1,23 @@
+{
+  "date": "2026-05-16",
+  "metrics": {
+    "trade_count": 0,
+    "rejection_count": 0,
+    "buy_amount": 0,
+    "sell_amount": 0,
+    "cash": 100000.0,
+    "position_count": 0,
+    "position_value": 0.0,
+    "total_asset": 100000.0,
+    "unrealized_pnl": 0.0,
+    "position_pct": 0.0
+  },
+  "account": {
+    "cash": 100000.0,
+    "positions": {},
+    "orders": [],
+    "pending_orders": []
+  },
+  "trades": [],
+  "rejections": []
+}

@@ -1,0 +1,43 @@
+===== build_market_context returncode=0 =====
+$ /Users/bytedance/PycharmProjects/stock/.venv/bin/python scripts/build_market_context.py --config config.yaml --top 20 --timeout 20 --allow-fallback --min-refresh-time 11:00
+--- stdout ---
+warn: spot timeout after 20s
+warn: spot timeout after 20s
+market_context=/Users/bytedance/PycharmProjects/stock/stockbot/data/market_context.json
+emotion phase=unknown score=0.0 fallback=true
+
+--- stderr ---
+
+===== build_dragon_pool returncode=0 =====
+$ /Users/bytedance/PycharmProjects/stock/.venv/bin/python scripts/build_dragon_pool.py --config config.yaml --universe-file stockbot/data/universe.csv --top 10 --allow-fallback
+--- stdout ---
+warn: clipped 2 rows where seal_amount > amount
+warn: dropped 9 rows with open_times >= 5
+dragon_pool_size=45 source=zt_pool output=/Users/bytedance/PycharmProjects/stock/stockbot/data/dragon_pool.csv
+002918.SZ 蒙娜丽莎 sector=家居用品 limit=6 score=0.6867 amount=883742688
+002031.SZ 巨轮智能 sector=专用设备 limit=1 score=0.6022 amount=3874956192
+688549.SH 中巨芯-U sector=电子化学 limit=1 score=0.5693 amount=1196280400
+002979.SZ 雷赛智能 sector=自动化设 limit=1 score=0.5573 amount=1189944560
+002407.SZ 多氟多 sector=化学制品 limit=1 score=0.5251 amount=5604165376
+300276.SZ 三丰智能 sector=自动化设 limit=1 score=0.5238 amount=944111888
+001259.SZ 利仁科技 sector=小家电 limit=5 score=0.5181 amount=34383360
+002196.SZ 方正电机 sector=电机Ⅱ limit=1 score=0.518 amount=1600254992
+603082.SH 北自科技 sector=自动化设 limit=2 score=0.4822 amount=527492848
+603390.SH 通达电气 sector=汽车零部 limit=1 score=0.4796 amount=358806864
+
+--- stderr ---
+
+===== run_trader returncode=1 =====
+$ /Users/bytedance/PycharmProjects/stock/.venv/bin/python scripts/run_trader.py --config config.yaml --universe-file stockbot/data/universe.csv --top 10
+--- stdout ---
+
+--- stderr ---
+Traceback (most recent call last):
+  File "/Users/bytedance/PycharmProjects/stock/scripts/run_trader.py", line 95, in <module>
+    main()
+  File "/Users/bytedance/PycharmProjects/stock/scripts/run_trader.py", line 54, in main
+    broker = LarkAlertBroker(cfg)
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bytedance/PycharmProjects/stock/stockbot/adapters/lark_alert.py", line 53, in __init__
+    raise RuntimeError("lark.webhook 未配置,无法启动 LarkAlertBroker")
+RuntimeError: lark.webhook 未配置,无法启动 LarkAlertBroker

@@ -1,0 +1,14 @@
+{
+  "initial_asset": 100000.0,
+  "final_asset": 100000.0,
+  "total_return": 0.0,
+  "max_drawdown": 0.0,
+  "annualized_sharpe": 0,
+  "sharpe_note": "按每日权益收益年化，仅用于同策略横向比较；胜率使用已平仓回合统计。",
+  "trade_count": 0,
+  "buy_count": 0,
+  "sell_count": 0,
+  "closed_rounds": 0,
+  "win_rate": 0,
+  "avg_closed_return": 0
+}

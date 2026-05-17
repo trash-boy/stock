@@ -1,0 +1,14 @@
+{
+  "run_id": "20260516_094718",
+  "project_root": "/Users/bytedance/PycharmProjects/stock",
+  "ok": true,
+  "steps": [
+    {
+      "name": "run_trader_paper",
+      "returncode": 0,
+      "started_at": "2026-05-16T09:47:18",
+      "finished_at": "2026-05-16T09:47:29"
+    }
+  ],
+  "log_path": "/Users/bytedance/PycharmProjects/stock/stockbot/logs/daily/20260516_094718.log"
+}
